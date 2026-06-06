@@ -140,7 +140,7 @@ def webhook():
 
             send_message(chat_id, customer_msg)
             send_message(ADMIN_ID, admin_msg)
-            send_photo_file(chat_id, "qr.jpg", "Payment QR 👆")
+            send_photo_file(chat_id, "qr.png", "Payment QR 👆")
 
         elif data.startswith("approve:") or data.startswith("reject:"):
             admin_id = callback["from"]["id"]
