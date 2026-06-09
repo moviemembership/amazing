@@ -14,14 +14,9 @@ LOW_STOCK_LIMIT = 5
 
 
 def send_message(chat_id, text, reply_markup=None):
-    data = {
-        "chat_id": chat_id,
-        "text": text
-    }
-
+    data = {"chat_id": chat_id, "text": text}
     if reply_markup:
         data["reply_markup"] = reply_markup
-
     requests.post(f"{BASE_URL}/sendMessage", json=data)
 
 
@@ -33,26 +28,15 @@ def send_photo_file(chat_id, photo_path, caption=""):
     with open(photo_path, "rb") as photo:
         requests.post(
             f"{BASE_URL}/sendPhoto",
-            data={
-                "chat_id": chat_id,
-                "caption": caption
-            },
-            files={
-                "photo": photo
-            }
+            data={"chat_id": chat_id, "caption": caption},
+            files={"photo": photo}
         )
 
 
 def send_photo_by_file_id(chat_id, file_id, caption="", reply_markup=None):
-    data = {
-        "chat_id": chat_id,
-        "photo": file_id,
-        "caption": caption
-    }
-
+    data = {"chat_id": chat_id, "photo": file_id, "caption": caption}
     if reply_markup:
         data["reply_markup"] = reply_markup
-
     requests.post(f"{BASE_URL}/sendPhoto", json=data)
 
 
@@ -85,18 +69,38 @@ def get_next_stock():
         for line in remaining_lines:
             f.write(line + "\n")
 
-    print(f"Delivered item: {item}", flush=True)
-    print(f"Remaining stock after delivery: {len(remaining_lines)}", flush=True)
-
     return item
 
 
 def answer_callback(callback_id):
     requests.post(
         f"{BASE_URL}/answerCallbackQuery",
-        json={
-            "callback_query_id": callback_id
-        }
+        json={"callback_query_id": callback_id}
+    )
+
+
+def main_menu(chat_id):
+    stock_count = get_stock_count()
+
+    keyboard = {
+        "inline_keyboard": [
+            [
+                {"text": f"Buy Product - {PRICE}", "callback_data": "buy"}
+            ],
+            [
+                {"text": "Contact Customer Support 💬", "callback_data": "support"}
+            ]
+        ]
+    }
+
+    send_message(
+        chat_id,
+        f"Hi 👋 What do you need?\n\n"
+        f"Product: {PRODUCT_NAME}\n"
+        f"Price: {PRICE}\n"
+        f"Stock Left: {stock_count}\n\n"
+        f"Please choose one option below:",
+        keyboard
     )
 
 
@@ -126,90 +130,66 @@ def webhook():
 def handle_message(message):
     chat_id = message["chat"]["id"]
 
-    if message.get("text") == "/start":
-        stock_count = get_stock_count()
+    if "photo" in message:
+        handle_receipt(message)
+        return
 
-        keyboard = {
-            "inline_keyboard": [
-                [
-                    {
-                        "text": f"Buy {PRODUCT_NAME} - {PRICE}",
-                        "callback_data": "buy"
-                    }
-                ]
+    # Anything user types will show the menu
+    main_menu(chat_id)
+
+
+def handle_receipt(message):
+    chat_id = message["chat"]["id"]
+    user = message["from"]
+
+    username = user.get("username", "No username")
+    name = user.get("first_name", "")
+    photo_id = message["photo"][-1]["file_id"]
+    stock_count = get_stock_count()
+
+    keyboard = {
+        "inline_keyboard": [
+            [
+                {"text": "Approve ✅", "callback_data": f"approve:{chat_id}"},
+                {"text": "Reject ❌", "callback_data": f"reject:{chat_id}"}
             ]
-        }
+        ]
+    }
 
-        send_message(
-            chat_id,
-            f"Welcome 👋\n\n"
+    send_photo_by_file_id(
+        ADMIN_ID,
+        photo_id,
+        caption=(
+            f"Receipt Received 🧾\n\n"
+            f"Order ID: {chat_id}\n"
+            f"Customer: @{username}\n"
+            f"Name: {name}\n"
+            f"Telegram ID: {chat_id}\n"
             f"Product: {PRODUCT_NAME}\n"
             f"Price: {PRICE}\n"
-            f"Stock Left: {stock_count}\n\n"
-            f"Click below to buy:",
-            keyboard
-        )
-
-        return
-
-    if "photo" in message:
-        user = message["from"]
-        username = user.get("username", "No username")
-        name = user.get("first_name", "")
-        photo_id = message["photo"][-1]["file_id"]
-        stock_count = get_stock_count()
-
-        keyboard = {
-            "inline_keyboard": [
-                [
-                    {
-                        "text": "Approve ✅",
-                        "callback_data": f"approve:{chat_id}"
-                    },
-                    {
-                        "text": "Reject ❌",
-                        "callback_data": f"reject:{chat_id}"
-                    }
-                ]
-            ]
-        }
-
-        send_photo_by_file_id(
-            ADMIN_ID,
-            photo_id,
-            caption=(
-                f"Receipt Received 🧾\n\n"
-                f"Order ID: {chat_id}\n"
-                f"Customer: @{username}\n"
-                f"Name: {name}\n"
-                f"Telegram ID: {chat_id}\n"
-                f"Product: {PRODUCT_NAME}\n"
-                f"Price: {PRICE}\n"
-                f"Stock Left Now: {stock_count}"
-            ),
-            reply_markup=keyboard
-        )
-
-        send_message(
-            chat_id,
-            "Receipt received ✅\nPlease wait for admin approval."
-        )
-
-        return
+            f"Stock Left Now: {stock_count}"
+        ),
+        reply_markup=keyboard
+    )
 
     send_message(
         chat_id,
-        "Please click /start to begin, or send your receipt screenshot after payment."
+        "Receipt received ✅\nPlease wait for admin approval."
     )
 
 
 def handle_callback(callback):
     callback_id = callback["id"]
     data = callback["data"]
+
     answer_callback(callback_id)
 
     if data == "buy":
         handle_buy(callback)
+        return
+
+    if data == "support":
+        handle_support(callback)
         return
 
     if data.startswith("approve:"):
@@ -219,6 +199,28 @@ def handle_callback(callback):
     if data.startswith("reject:"):
         handle_reject(callback)
         return
+
+
+def handle_support(callback):
+    chat_id = callback["message"]["chat"]["id"]
+    user = callback["from"]
+
+    username = user.get("username", "No username")
+    name = user.get("first_name", "")
+
+    send_message(
+        chat_id,
+        "Customer Support 💬\n\n"
+        "Please type your question here. Admin will reply to you as soon as possible."
+    )
+
+    send_message(
+        ADMIN_ID,
+        f"Customer Support Request 💬\n\n"
+        f"Customer: @{username}\n"
+        f"Name: {name}\n"
+        f"Telegram ID: {chat_id}"
+    )
 
 
 def handle_buy(callback):
@@ -289,8 +291,7 @@ def handle_approve(callback):
         send_message(admin_id, "You are not allowed to do this.")
         return
 
-    data = callback["data"]
-    customer_id = int(data.split(":")[1])
+    customer_id = int(callback["data"].split(":")[1])
 
     item = get_next_stock()
     remaining_stock = get_stock_count()
@@ -308,7 +309,8 @@ def handle_approve(callback):
 
         return
 
-    customer_msg = (
+    send_message(
+        customer_id,
         f"Payment Approved ✅\n\n"
         f"Order ID: {customer_id}\n"
         f"Product: {PRODUCT_NAME}\n"
@@ -317,7 +319,8 @@ def handle_approve(callback):
         f"Thank you for your purchase."
     )
 
-    admin_msg = (
+    send_message(
+        ADMIN_ID,
         f"Order Completed ✅\n\n"
         f"Order ID: {customer_id}\n"
         f"Customer Telegram ID: {customer_id}\n"
@@ -326,9 +329,6 @@ def handle_approve(callback):
         f"Delivered Item:\n{item}\n\n"
         f"Remaining Stock: {remaining_stock}"
     )
-
-    send_message(customer_id, customer_msg)
-    send_message(ADMIN_ID, admin_msg)
 
     if remaining_stock <= LOW_STOCK_LIMIT:
         send_message(
@@ -346,8 +346,7 @@ def handle_reject(callback):
         send_message(admin_id, "You are not allowed to do this.")
         return
 
-    data = callback["data"]
-    customer_id = int(data.split(":")[1])
+    customer_id = int(callback["data"].split(":")[1])
 
     send_message(
         customer_id,
