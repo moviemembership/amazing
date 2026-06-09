@@ -88,7 +88,7 @@ def main_menu(chat_id):
                 {"text": f"Buy Product - {PRICE}", "callback_data": "buy"}
             ],
             [
-                {"text": "Contact Customer Support 💬", "https://t.me/moviemembership"}
+                {"text": "Contact Customer Support 💬", "url":"https://t.me/moviemembership"}
             ]
         ]
     }
