@@ -424,7 +424,8 @@ def handle_approve(callback):
     send_message(
         customer_id,
         f"Payment Approved ✅\n\n"
-        f"{formatted_item}\n\n"
+        f"{formatted_item}\n"
+        f"You are able to edit and lock your profile\n\n"
         f"Sign in at Netflix apps/Website, Only Gey The Code if they request\n"
         f"how to sign in with password: https://shorturl.at/BYY3p\n\n"
         f"Get Sign In Code Here(4-digit): https://mantapnet.onrender.com/sign-in-code-auto\n\n"
