@@ -1,4 +1,5 @@
 import os
+import html
 import requests
 import psycopg2
 from psycopg2.extras import RealDictCursor
@@ -16,7 +17,7 @@ BASE_URL = f"https://api.telegram.org/bot{BOT_TOKEN}"
 PRODUCT_NAME = "Digital Access"
 PRICE = "RM10"
 LOW_STOCK_LIMIT = 5
-SUPPORT_LINK = "https://t.me/moviemembership"
+SUPPORT_LINK = "https://t.me/YOUR_USERNAME"
 
 
 def db():
@@ -42,13 +43,15 @@ def init_db():
                     telegram_id BIGINT NOT NULL,
                     username TEXT,
                     first_name TEXT,
-                    raw_item TEXT,
-                    formatted_item TEXT,
                     status TEXT DEFAULT 'completed',
                     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
                 );
             """)
+
+            cur.execute("ALTER TABLE orders ADD COLUMN IF NOT EXISTS raw_item TEXT;")
+            cur.execute("ALTER TABLE orders ADD COLUMN IF NOT EXISTS formatted_item TEXT;")
+            cur.execute("ALTER TABLE orders ADD COLUMN IF NOT EXISTS delivered_item TEXT;")
 
             conn.commit()
 
@@ -57,9 +60,14 @@ init_db()
 
 
 def send_message(chat_id, text, reply_markup=None):
-    data = {"chat_id": chat_id, "text": text}
+    data = {
+        "chat_id": chat_id,
+        "text": text
+    }
+
     if reply_markup:
         data["reply_markup"] = reply_markup
+
     requests.post(f"{BASE_URL}/sendMessage", json=data)
 
 
@@ -71,22 +79,35 @@ def send_photo_file(chat_id, photo_path, caption=""):
     with open(photo_path, "rb") as photo:
         requests.post(
             f"{BASE_URL}/sendPhoto",
-            data={"chat_id": chat_id, "caption": caption},
-            files={"photo": photo}
+            data={
+                "chat_id": chat_id,
+                "caption": caption
+            },
+            files={
+                "photo": photo
+            }
         )
 
 
 def send_photo_by_file_id(chat_id, file_id, caption="", reply_markup=None):
-    data = {"chat_id": chat_id, "photo": file_id, "caption": caption}
+    data = {
+        "chat_id": chat_id,
+        "photo": file_id,
+        "caption": caption
+    }
+
     if reply_markup:
         data["reply_markup"] = reply_markup
+
     requests.post(f"{BASE_URL}/sendPhoto", json=data)
 
 
 def answer_callback(callback_id):
     requests.post(
         f"{BASE_URL}/answerCallbackQuery",
-        json={"callback_query_id": callback_id}
+        json={
+            "callback_query_id": callback_id
+        }
     )
 
 
@@ -105,7 +126,14 @@ def format_item(raw_item):
     )
 
 
-def get_available_stock():
+def get_stock_count():
+    with db() as conn:
+        with conn.cursor() as cur:
+            cur.execute("SELECT COUNT(*) FROM stock WHERE status = 'available';")
+            return cur.fetchone()[0]
+
+
+def get_available_stock_items():
     with db() as conn:
         with conn.cursor(cursor_factory=RealDictCursor) as cur:
             cur.execute("""
@@ -115,10 +143,6 @@ def get_available_stock():
                 ORDER BY id ASC;
             """)
             return cur.fetchall()
-
-
-def get_stock_count():
-    return len(get_available_stock())
 
 
 def sync_stock_from_textarea(text):
@@ -137,44 +161,22 @@ def sync_stock_from_textarea(text):
             conn.commit()
 
 
-def get_next_stock():
-    with db() as conn:
-        with conn.cursor(cursor_factory=RealDictCursor) as cur:
-            cur.execute("""
-                SELECT id, raw_item
-                FROM stock
-                WHERE status = 'available'
-                ORDER BY id ASC
-                LIMIT 1
-                FOR UPDATE;
-            """)
-
-            item = cur.fetchone()
-
-            if not item:
-                return None
-
-            cur.execute("""
-                UPDATE stock
-                SET status = 'used',
-                    used_at = CURRENT_TIMESTAMP
-                WHERE id = %s;
-            """, (item["id"],))
-
-            conn.commit()
-            return item["raw_item"]
-
-
-def save_order(telegram_id, username, first_name, raw_item):
-    formatted_item = format_item(raw_item)
-
+def save_order(telegram_id, username, first_name, raw_item, formatted_item):
     with db() as conn:
         with conn.cursor() as cur:
             cur.execute("""
                 INSERT INTO orders
-                (telegram_id, username, first_name, raw_item, formatted_item, status)
-                VALUES (%s, %s, %s, %s, %s, 'completed');
-            """, (telegram_id, username, first_name, raw_item, formatted_item))
+                (telegram_id, username, first_name, raw_item, formatted_item, delivered_item, status)
+                VALUES (%s, %s, %s, %s, %s, %s, 'completed');
+            """, (
+                telegram_id,
+                username,
+                first_name,
+                raw_item,
+                formatted_item,
+                raw_item
+            ))
+
             conn.commit()
 
 
@@ -195,9 +197,15 @@ def update_orders_replace(old_item, new_item):
                 UPDATE orders
                 SET raw_item = %s,
                     formatted_item = %s,
+                    delivered_item = %s,
                     updated_at = CURRENT_TIMESTAMP
                 WHERE raw_item = %s;
-            """, (new_item, new_formatted, old_item))
+            """, (
+                new_item,
+                new_formatted,
+                new_item,
+                old_item
+            ))
 
             conn.commit()
 
@@ -209,8 +217,18 @@ def main_menu(chat_id):
 
     keyboard = {
         "inline_keyboard": [
-            [{"text": f"Buy Product - {PRICE}", "callback_data": "buy"}],
-            [{"text": "Contact Customer Support 💬", "url": SUPPORT_LINK}]
+            [
+                {
+                    "text": f"Buy Product - {PRICE}",
+                    "callback_data": "buy"
+                }
+            ],
+            [
+                {
+                    "text": "Contact Customer Support 💬",
+                    "url": SUPPORT_LINK
+                }
+            ]
         ]
     }
 
@@ -267,8 +285,14 @@ def handle_receipt(message):
     keyboard = {
         "inline_keyboard": [
             [
-                {"text": "Approve ✅", "callback_data": f"approve:{chat_id}:{username}:{name}"},
-                {"text": "Reject ❌", "callback_data": f"reject:{chat_id}"}
+                {
+                    "text": "Approve ✅",
+                    "callback_data": f"approve:{chat_id}"
+                },
+                {
+                    "text": "Reject ❌",
+                    "callback_data": f"reject:{chat_id}"
+                }
             ]
         ]
     }
@@ -288,7 +312,10 @@ def handle_receipt(message):
         reply_markup=keyboard
     )
 
-    send_message(chat_id, "Receipt received ✅\nPlease wait for admin approval.")
+    send_message(
+        chat_id,
+        "Receipt received ✅\nPlease wait for admin approval."
+    )
 
 
 def handle_callback(callback):
@@ -316,12 +343,23 @@ def handle_buy(callback):
     stock_count = get_stock_count()
 
     if stock_count <= 0:
-        send_message(chat_id, "Sorry, this product is currently out of stock ❌")
-        send_message(ADMIN_ID, "Stock Alert ❌\n\nStock is now 0.")
+        send_message(
+            chat_id,
+            "Sorry, this product is currently out of stock ❌"
+        )
+
+        send_message(
+            ADMIN_ID,
+            "Stock Alert ❌\n\nStock is now 0."
+        )
+
         return
 
     if stock_count <= LOW_STOCK_LIMIT:
-        send_message(ADMIN_ID, f"Low Stock Warning ⚠️\n\nOnly {stock_count} item(s) left.")
+        send_message(
+            ADMIN_ID,
+            f"Low Stock Warning ⚠️\n\nOnly {stock_count} item(s) left."
+        )
 
     send_message(
         chat_id,
@@ -342,29 +380,75 @@ def handle_buy(callback):
         f"Stock Before Payment: {stock_count}"
     )
 
-    send_photo_file(chat_id, "qr.jpg", "Scan QR and complete payment.")
+    send_photo_file(
+        chat_id,
+        "qr.jpg",
+        "Scan QR and complete payment."
+    )
 
 
 def handle_approve(callback):
     if callback["from"]["id"] != ADMIN_ID:
-        send_message(callback["from"]["id"], "You are not allowed to do this.")
+        send_message(
+            callback["from"]["id"],
+            "You are not allowed to do this."
+        )
         return
 
-    parts = callback["data"].split(":")
-    customer_id = int(parts[1])
-    username = parts[2] if len(parts) > 2 else "No username"
-    name = parts[3] if len(parts) > 3 else ""
+    customer_id = int(callback["data"].split(":")[1])
 
-    raw_item = get_next_stock()
+    with db() as conn:
+        with conn.cursor(cursor_factory=RealDictCursor) as cur:
+            cur.execute("""
+                SELECT id, raw_item
+                FROM stock
+                WHERE status = 'available'
+                ORDER BY id ASC
+                LIMIT 1
+                FOR UPDATE;
+            """)
 
-    if not raw_item:
-        send_message(customer_id, "Payment approved, but stock is empty. Please contact admin.")
-        send_message(ADMIN_ID, "No stock left ❌")
-        return
+            stock_item = cur.fetchone()
 
-    formatted_item = format_item(raw_item)
+            if not stock_item:
+                send_message(
+                    customer_id,
+                    "Payment approved, but stock is empty. Please contact admin."
+                )
 
-    save_order(customer_id, username, name, raw_item)
+                send_message(
+                    ADMIN_ID,
+                    "No stock left ❌"
+                )
+
+                return
+
+            raw_item = stock_item["raw_item"]
+            formatted_item = format_item(raw_item)
+
+            cur.execute("""
+                INSERT INTO orders
+                (telegram_id, raw_item, formatted_item, delivered_item, status)
+                VALUES (%s, %s, %s, %s, 'completed');
+            """, (
+                customer_id,
+                raw_item,
+                formatted_item,
+                raw_item
+            ))
+
+            cur.execute("""
+                UPDATE stock
+                SET status = 'used',
+                    used_at = CURRENT_TIMESTAMP
+                WHERE id = %s;
+            """, (
+                stock_item["id"],
+            ))
+
+            conn.commit()
+
+    remaining = get_stock_count()
 
     send_message(
         customer_id,
@@ -373,8 +457,6 @@ def handle_approve(callback):
         f"{formatted_item}\n\n"
         f"Thank you for your purchase."
     )
-
-    remaining = get_stock_count()
 
     send_message(
         ADMIN_ID,
@@ -385,16 +467,32 @@ def handle_approve(callback):
         f"Remaining Stock: {remaining}"
     )
 
+    if remaining <= LOW_STOCK_LIMIT:
+        send_message(
+            ADMIN_ID,
+            f"Low Stock Warning ⚠️\n\nOnly {remaining} item(s) left."
+        )
+
 
 def handle_reject(callback):
     if callback["from"]["id"] != ADMIN_ID:
-        send_message(callback["from"]["id"], "You are not allowed to do this.")
+        send_message(
+            callback["from"]["id"],
+            "You are not allowed to do this."
+        )
         return
 
     customer_id = int(callback["data"].split(":")[1])
 
-    send_message(customer_id, "Payment rejected ❌\nPlease check your receipt and send again.")
-    send_message(ADMIN_ID, f"Order rejected ❌\nCustomer ID: {customer_id}")
+    send_message(
+        customer_id,
+        "Payment rejected ❌\nPlease check your receipt and send again."
+    )
+
+    send_message(
+        ADMIN_ID,
+        f"Order rejected ❌\nCustomer ID: {customer_id}"
+    )
 
 
 @app.route("/admin", methods=["GET", "POST"])
@@ -415,11 +513,21 @@ def admin():
 
             if raw_item:
                 formatted = format_item(raw_item)
+
                 send_message(
                     telegram_id,
-                    f"Manual Delivery ✅\n\nHere is your updated product:\n\n{formatted}"
+                    f"Manual Delivery ✅\n\n"
+                    f"Here is your updated product:\n\n"
+                    f"{formatted}"
                 )
-                save_order(telegram_id, "manual", "manual", raw_item)
+
+                save_order(
+                    telegram_id,
+                    "manual",
+                    "manual",
+                    raw_item,
+                    formatted
+                )
 
         elif action == "replace_item":
             old_item = request.form.get("old_item", "").strip()
@@ -431,7 +539,9 @@ def admin():
                 for buyer in buyers:
                     send_message(
                         buyer["telegram_id"],
-                        f"Product Replacement ✅\n\nYour updated product:\n\n{formatted}"
+                        f"Product Replacement ✅\n\n"
+                        f"Your updated product:\n\n"
+                        f"{formatted}"
                     )
 
         elif action == "delete_orders":
@@ -440,7 +550,11 @@ def admin():
             with db() as conn:
                 with conn.cursor() as cur:
                     for order_id in ids:
-                        cur.execute("DELETE FROM orders WHERE id = %s;", (order_id,))
+                        cur.execute(
+                            "DELETE FROM orders WHERE id = %s;",
+                            (order_id,)
+                        )
+
                     conn.commit()
 
         return redirect(f"/admin?key={ADMIN_KEY}")
@@ -455,6 +569,7 @@ def admin():
                 WHERE status = 'available'
                 ORDER BY id ASC;
             """)
+
             stock_items = cur.fetchall()
 
             if date_filter:
@@ -463,7 +578,9 @@ def admin():
                     FROM orders
                     WHERE DATE(created_at) = %s
                     ORDER BY created_at DESC;
-                """, (date_filter,))
+                """, (
+                    date_filter,
+                ))
             else:
                 cur.execute("""
                     SELECT *
@@ -478,16 +595,17 @@ def admin():
     available_count = len(stock_items)
 
     order_rows = ""
+
     for o in orders:
         order_rows += f"""
         <tr>
             <td><input type="checkbox" name="order_ids" value="{o['id']}"></td>
-            <td>{o['id']}</td>
-            <td>{o['telegram_id']}</td>
-            <td>{o['username']}</td>
-            <td><pre>{o['formatted_item']}</pre></td>
-            <td>{o['status']}</td>
-            <td>{o['created_at']}</td>
+            <td>{html.escape(str(o['id']))}</td>
+            <td>{html.escape(str(o['telegram_id']))}</td>
+            <td>{html.escape(str(o.get('username') or ''))}</td>
+            <td><pre>{html.escape(str(o.get('formatted_item') or ''))}</pre></td>
+            <td>{html.escape(str(o.get('status') or ''))}</td>
+            <td>{html.escape(str(o.get('created_at') or ''))}</td>
         </tr>
         """
 
@@ -496,14 +614,48 @@ def admin():
     <head>
         <title>Telegram Bot Admin</title>
         <style>
-            body {{ font-family: Arial; padding: 20px; background: #f5f5f5; }}
-            .card {{ background: white; padding: 20px; margin-bottom: 20px; border-radius: 8px; }}
-            textarea {{ width: 100%; height: 220px; }}
-            input {{ padding: 8px; margin: 5px 0; width: 100%; }}
-            button {{ padding: 10px 16px; margin-top: 8px; background: #1677ff; color: white; border: 0; border-radius: 5px; }}
-            table {{ border-collapse: collapse; width: 100%; background: white; }}
-            th, td {{ border: 1px solid #ccc; padding: 8px; vertical-align: top; }}
-            pre {{ white-space: pre-wrap; margin: 0; }}
+            body {{
+                font-family: Arial;
+                padding: 20px;
+                background: #f5f5f5;
+            }}
+            .card {{
+                background: white;
+                padding: 20px;
+                margin-bottom: 20px;
+                border-radius: 8px;
+            }}
+            textarea {{
+                width: 100%;
+                height: 220px;
+            }}
+            input {{
+                padding: 8px;
+                margin: 5px 0;
+                width: 100%;
+            }}
+            button {{
+                padding: 10px 16px;
+                margin-top: 8px;
+                background: #1677ff;
+                color: white;
+                border: 0;
+                border-radius: 5px;
+            }}
+            table {{
+                border-collapse: collapse;
+                width: 100%;
+                background: white;
+            }}
+            th, td {{
+                border: 1px solid #ccc;
+                padding: 8px;
+                vertical-align: top;
+            }}
+            pre {{
+                white-space: pre-wrap;
+                margin: 0;
+            }}
         </style>
     </head>
     <body>
@@ -512,9 +664,10 @@ def admin():
 
         <div class="card">
             <h2>Accounts / Stock ({available_count} remaining)</h2>
+            <p>Format: ACCESS001----CODE123----1</p>
             <form method="POST">
                 <input type="hidden" name="action" value="update_stock">
-                <textarea name="accounts">{account_text}</textarea>
+                <textarea name="accounts">{html.escape(account_text)}</textarea>
                 <button type="submit">Update Accounts</button>
             </form>
         </div>
@@ -543,8 +696,8 @@ def admin():
             <h2>Orders</h2>
 
             <form method="GET">
-                <input type="hidden" name="key" value="{ADMIN_KEY}">
-                <input type="date" name="date" value="{date_filter}">
+                <input type="hidden" name="key" value="{html.escape(ADMIN_KEY)}">
+                <input type="date" name="date" value="{html.escape(date_filter)}">
                 <button type="submit">Filter Date</button>
             </form>
 
@@ -571,7 +724,9 @@ def admin():
 
         <script>
             function selectAll() {{
-                document.querySelectorAll('input[type="checkbox"]').forEach(cb => cb.checked = true);
+                document.querySelectorAll('input[type="checkbox"]').forEach(
+                    cb => cb.checked = true
+                );
             }}
         </script>
 
