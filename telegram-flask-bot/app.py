@@ -14,7 +14,7 @@ ADMIN_KEY = os.environ.get("ADMIN_KEY", "changeme")
 
 BASE_URL = f"https://api.telegram.org/bot{BOT_TOKEN}"
 
-PRODUCT_NAME = "Digital Access"
+PRODUCT_NAME = "Website Access"
 PRICE = "RM10"
 LOW_STOCK_LIMIT = 5
 SUPPORT_LINK = "https://t.me/YOUR_USERNAME"
@@ -60,14 +60,9 @@ init_db()
 
 
 def send_message(chat_id, text, reply_markup=None):
-    data = {
-        "chat_id": chat_id,
-        "text": text
-    }
-
+    data = {"chat_id": chat_id, "text": text}
     if reply_markup:
         data["reply_markup"] = reply_markup
-
     requests.post(f"{BASE_URL}/sendMessage", json=data)
 
 
@@ -79,51 +74,58 @@ def send_photo_file(chat_id, photo_path, caption=""):
     with open(photo_path, "rb") as photo:
         requests.post(
             f"{BASE_URL}/sendPhoto",
-            data={
-                "chat_id": chat_id,
-                "caption": caption
-            },
-            files={
-                "photo": photo
-            }
+            data={"chat_id": chat_id, "caption": caption},
+            files={"photo": photo}
         )
 
 
 def send_photo_by_file_id(chat_id, file_id, caption="", reply_markup=None):
-    data = {
-        "chat_id": chat_id,
-        "photo": file_id,
-        "caption": caption
-    }
-
+    data = {"chat_id": chat_id, "photo": file_id, "caption": caption}
     if reply_markup:
         data["reply_markup"] = reply_markup
-
     requests.post(f"{BASE_URL}/sendPhoto", json=data)
 
 
 def answer_callback(callback_id):
     requests.post(
         f"{BASE_URL}/answerCallbackQuery",
-        json={
-            "callback_query_id": callback_id
-        }
+        json={"callback_query_id": callback_id}
     )
 
 
 def format_item(raw_item):
     parts = raw_item.split("----")
 
-    if len(parts) != 3:
-        return raw_item
+    if len(parts) == 3:
+        email, password, slot = parts
+        return (
+            f"Email: {email}\n"
+            f"Password: {password}\n"
+            f"Profile: {slot}"
+        )
 
-    access_id, code, slot = parts
+    if len(parts) == 2:
+        email, password = parts
+        return (
+            f"Email: {email}\n"
+            f"Password: {password}"
+        )
 
-    return (
-        f"Access ID: {access_id}\n"
-        f"Code: {code}\n"
-        f"Slot: {slot}"
-    )
+    return raw_item
+
+
+def get_base_login(raw_item):
+    parts = raw_item.split("----")
+    if len(parts) >= 2:
+        return f"{parts[0]}----{parts[1]}"
+    return raw_item
+
+
+def get_slot(raw_item):
+    parts = raw_item.split("----")
+    if len(parts) >= 3:
+        return parts[2]
+    return ""
 
 
 def get_stock_count():
@@ -131,18 +133,6 @@ def get_stock_count():
         with conn.cursor() as cur:
             cur.execute("SELECT COUNT(*) FROM stock WHERE status = 'available';")
             return cur.fetchone()[0]
-
-
-def get_available_stock_items():
-    with db() as conn:
-        with conn.cursor(cursor_factory=RealDictCursor) as cur:
-            cur.execute("""
-                SELECT id, raw_item
-                FROM stock
-                WHERE status = 'available'
-                ORDER BY id ASC;
-            """)
-            return cur.fetchall()
 
 
 def sync_stock_from_textarea(text):
@@ -176,40 +166,55 @@ def save_order(telegram_id, username, first_name, raw_item, formatted_item):
                 formatted_item,
                 raw_item
             ))
-
             conn.commit()
 
 
-def update_orders_replace(old_item, new_item):
-    new_formatted = format_item(new_item)
+def update_orders_replace(old_login, new_login):
+    buyers_to_notify = []
 
     with db() as conn:
         with conn.cursor(cursor_factory=RealDictCursor) as cur:
             cur.execute("""
-                SELECT DISTINCT telegram_id
+                SELECT id, telegram_id, raw_item
                 FROM orders
-                WHERE raw_item = %s;
-            """, (old_item,))
+                WHERE raw_item LIKE %s;
+            """, (old_login + "----%",))
 
-            buyers = cur.fetchall()
+            orders = cur.fetchall()
 
-            cur.execute("""
-                UPDATE orders
-                SET raw_item = %s,
-                    formatted_item = %s,
-                    delivered_item = %s,
-                    updated_at = CURRENT_TIMESTAMP
-                WHERE raw_item = %s;
-            """, (
-                new_item,
-                new_formatted,
-                new_item,
-                old_item
-            ))
+            for order in orders:
+                old_raw_item = order["raw_item"]
+                slot = get_slot(old_raw_item)
+
+                if slot:
+                    new_raw_item = f"{new_login}----{slot}"
+                else:
+                    new_raw_item = new_login
+
+                new_formatted = format_item(new_raw_item)
+
+                cur.execute("""
+                    UPDATE orders
+                    SET raw_item = %s,
+                        formatted_item = %s,
+                        delivered_item = %s,
+                        updated_at = CURRENT_TIMESTAMP
+                    WHERE id = %s;
+                """, (
+                    new_raw_item,
+                    new_formatted,
+                    new_raw_item,
+                    order["id"]
+                ))
+
+                buyers_to_notify.append({
+                    "telegram_id": order["telegram_id"],
+                    "formatted_item": new_formatted
+                })
 
             conn.commit()
 
-            return buyers, new_formatted
+    return buyers_to_notify
 
 
 def main_menu(chat_id):
@@ -217,18 +222,8 @@ def main_menu(chat_id):
 
     keyboard = {
         "inline_keyboard": [
-            [
-                {
-                    "text": f"Buy Product - {PRICE}",
-                    "callback_data": "buy"
-                }
-            ],
-            [
-                {
-                    "text": "Contact Customer Support 💬",
-                    "url": SUPPORT_LINK
-                }
-            ]
+            [{"text": f"Buy Product - {PRICE}", "callback_data": "buy"}],
+            [{"text": "Contact Customer Support 💬", "url": SUPPORT_LINK}]
         ]
     }
 
@@ -285,14 +280,8 @@ def handle_receipt(message):
     keyboard = {
         "inline_keyboard": [
             [
-                {
-                    "text": "Approve ✅",
-                    "callback_data": f"approve:{chat_id}"
-                },
-                {
-                    "text": "Reject ❌",
-                    "callback_data": f"reject:{chat_id}"
-                }
+                {"text": "Approve ✅", "callback_data": f"approve:{chat_id}"},
+                {"text": "Reject ❌", "callback_data": f"reject:{chat_id}"}
             ]
         ]
     }
@@ -312,10 +301,7 @@ def handle_receipt(message):
         reply_markup=keyboard
     )
 
-    send_message(
-        chat_id,
-        "Receipt received ✅\nPlease wait for admin approval."
-    )
+    send_message(chat_id, "Receipt received ✅\nPlease wait for admin approval.")
 
 
 def handle_callback(callback):
@@ -343,23 +329,12 @@ def handle_buy(callback):
     stock_count = get_stock_count()
 
     if stock_count <= 0:
-        send_message(
-            chat_id,
-            "Sorry, this product is currently out of stock ❌"
-        )
-
-        send_message(
-            ADMIN_ID,
-            "Stock Alert ❌\n\nStock is now 0."
-        )
-
+        send_message(chat_id, "Sorry, this product is currently out of stock ❌")
+        send_message(ADMIN_ID, "Stock Alert ❌\n\nStock is now 0.")
         return
 
     if stock_count <= LOW_STOCK_LIMIT:
-        send_message(
-            ADMIN_ID,
-            f"Low Stock Warning ⚠️\n\nOnly {stock_count} item(s) left."
-        )
+        send_message(ADMIN_ID, f"Low Stock Warning ⚠️\n\nOnly {stock_count} item(s) left.")
 
     send_message(
         chat_id,
@@ -380,19 +355,12 @@ def handle_buy(callback):
         f"Stock Before Payment: {stock_count}"
     )
 
-    send_photo_file(
-        chat_id,
-        "qr.jpg",
-        "Scan QR and complete payment."
-    )
+    send_photo_file(chat_id, "qr.jpg", "Scan QR and complete payment.")
 
 
 def handle_approve(callback):
     if callback["from"]["id"] != ADMIN_ID:
-        send_message(
-            callback["from"]["id"],
-            "You are not allowed to do this."
-        )
+        send_message(callback["from"]["id"], "You are not allowed to do this.")
         return
 
     customer_id = int(callback["data"].split(":")[1])
@@ -411,16 +379,8 @@ def handle_approve(callback):
             stock_item = cur.fetchone()
 
             if not stock_item:
-                send_message(
-                    customer_id,
-                    "Payment approved, but stock is empty. Please contact admin."
-                )
-
-                send_message(
-                    ADMIN_ID,
-                    "No stock left ❌"
-                )
-
+                send_message(customer_id, "Payment approved, but stock is empty. Please contact admin.")
+                send_message(ADMIN_ID, "No stock left ❌")
                 return
 
             raw_item = stock_item["raw_item"]
@@ -468,31 +428,18 @@ def handle_approve(callback):
     )
 
     if remaining <= LOW_STOCK_LIMIT:
-        send_message(
-            ADMIN_ID,
-            f"Low Stock Warning ⚠️\n\nOnly {remaining} item(s) left."
-        )
+        send_message(ADMIN_ID, f"Low Stock Warning ⚠️\n\nOnly {remaining} item(s) left.")
 
 
 def handle_reject(callback):
     if callback["from"]["id"] != ADMIN_ID:
-        send_message(
-            callback["from"]["id"],
-            "You are not allowed to do this."
-        )
+        send_message(callback["from"]["id"], "You are not allowed to do this.")
         return
 
     customer_id = int(callback["data"].split(":")[1])
 
-    send_message(
-        customer_id,
-        "Payment rejected ❌\nPlease check your receipt and send again."
-    )
-
-    send_message(
-        ADMIN_ID,
-        f"Order rejected ❌\nCustomer ID: {customer_id}"
-    )
+    send_message(customer_id, "Payment rejected ❌\nPlease check your receipt and send again.")
+    send_message(ADMIN_ID, f"Order rejected ❌\nCustomer ID: {customer_id}")
 
 
 @app.route("/admin", methods=["GET", "POST"])
@@ -530,18 +477,18 @@ def admin():
                 )
 
         elif action == "replace_item":
-            old_item = request.form.get("old_item", "").strip()
-            new_item = request.form.get("new_item", "").strip()
+            old_login = request.form.get("old_item", "").strip()
+            new_login = request.form.get("new_item", "").strip()
 
-            if old_item and new_item:
-                buyers, formatted = update_orders_replace(old_item, new_item)
+            if old_login and new_login:
+                buyers = update_orders_replace(old_login, new_login)
 
                 for buyer in buyers:
                     send_message(
                         buyer["telegram_id"],
-                        f"Product Replacement ✅\n\n"
-                        f"Your updated product:\n\n"
-                        f"{formatted}"
+                        f"Account Replacement ✅\n\n"
+                        f"Your updated login:\n\n"
+                        f"{buyer['formatted_item']}"
                     )
 
         elif action == "delete_orders":
@@ -554,7 +501,6 @@ def admin():
                             "DELETE FROM orders WHERE id = %s;",
                             (order_id,)
                         )
-
                     conn.commit()
 
         return redirect(f"/admin?key={ADMIN_KEY}")
@@ -578,9 +524,7 @@ def admin():
                     FROM orders
                     WHERE DATE(created_at) = %s
                     ORDER BY created_at DESC;
-                """, (
-                    date_filter,
-                ))
+                """, (date_filter,))
             else:
                 cur.execute("""
                     SELECT *
@@ -664,7 +608,7 @@ def admin():
 
         <div class="card">
             <h2>Accounts / Stock ({available_count} remaining)</h2>
-            <p>Format: ACCESS001----CODE123----1</p>
+            <p>Format: email----password----profile</p>
             <form method="POST">
                 <input type="hidden" name="action" value="update_stock">
                 <textarea name="accounts">{html.escape(account_text)}</textarea>
@@ -677,17 +621,18 @@ def admin():
             <form method="POST">
                 <input type="hidden" name="action" value="manual_delivery">
                 <input name="telegram_id" placeholder="Telegram ID">
-                <input name="manual_item" placeholder="ACCESS001----CODE123----1">
+                <input name="manual_item" placeholder="email----password----profile">
                 <button type="submit">Manual Delivery</button>
             </form>
         </div>
 
         <div class="card">
-            <h2>Replace Delivered Item</h2>
+            <h2>Replace Login</h2>
+            <p>Only type email----password. The buyer's previous profile number will stay the same.</p>
             <form method="POST">
                 <input type="hidden" name="action" value="replace_item">
-                <input name="old_item" placeholder="Old item exact text">
-                <input name="new_item" placeholder="New item exact text">
+                <input name="old_item" placeholder="Old email----old password">
+                <input name="new_item" placeholder="New email----new password">
                 <button type="submit">Replace & Notify Buyers</button>
             </form>
         </div>
