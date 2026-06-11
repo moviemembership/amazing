@@ -16,7 +16,7 @@ BASE_URL = f"https://api.telegram.org/bot{BOT_TOKEN}"
 PRODUCT_NAME = "Digital Access"
 PRICE = "RM10"
 LOW_STOCK_LIMIT = 5
-SUPPORT_LINK = "https://t.me/YOUR_USERNAME"
+SUPPORT_LINK = "https://t.me/moviemembership"
 
 
 def db():
