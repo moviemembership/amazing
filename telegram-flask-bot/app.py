@@ -14,7 +14,7 @@ ADMIN_KEY = os.environ.get("ADMIN_KEY", "changeme")
 
 BASE_URL = f"https://api.telegram.org/bot{BOT_TOKEN}"
 
-PRODUCT_NAME = "Website Access"
+PRODUCT_NAME = "Netflix Private Profile 1 Month"
 PRICE = "RM15.9"
 LOW_STOCK_LIMIT = 5
 SUPPORT_LINK = "https://t.me/moviemembership"
@@ -232,14 +232,14 @@ def main_menu(chat_id):
 
     keyboard = {
         "inline_keyboard": [
-            [{"text": f"Buy Product - {PRICE}", "callback_data": "buy"}],
+            [{"text": f"Buy Netflix Account - {PRICE}", "callback_data": "buy"}],
             [{"text": "Contact Customer Support 💬", "url": SUPPORT_LINK}]
         ]
     }
 
     send_message(
         chat_id,
-        f"Hi 👋 What do you need?\n\n"
+        f"Hi 👋 Netflix Private Profile Available\n\n"
         f"Product: {PRODUCT_NAME}\n"
         f"Price: {PRICE}\n"
         f"Stock Left: {stock_count}\n\n"
@@ -366,7 +366,7 @@ def handle_buy(callback):
         f"Stock Before Payment: {stock_count}"
     )
 
-    send_photo_file(chat_id, "qr.jpg", "Scan QR and complete payment.")
+    send_photo_file(chat_id, "qr.png", "Scan QR and complete payment.")
 
 
 def handle_approve(callback):
