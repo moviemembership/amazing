@@ -17,11 +17,21 @@ BASE_URL = f"https://api.telegram.org/bot{BOT_TOKEN}"
 PRODUCT_NAME = "Website Access"
 PRICE = "RM10"
 LOW_STOCK_LIMIT = 5
-SUPPORT_LINK = "https://t.me/YOUR_USERNAME"
+SUPPORT_LINK = "https://t.me/moviemembership"
 
 
 def db():
-    return psycopg2.connect(DATABASE_URL, sslmode="require")
+    conn = psycopg2.connect(
+        DATABASE_URL,
+        sslmode="require"
+    )
+
+    with conn.cursor() as cur:
+        cur.execute("SET TIME ZONE 'Asia/Kuala_Lumpur';")
+
+    conn.commit()
+
+    return conn
 
 
 def init_db():
