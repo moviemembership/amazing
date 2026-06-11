@@ -15,7 +15,7 @@ ADMIN_KEY = os.environ.get("ADMIN_KEY", "changeme")
 BASE_URL = f"https://api.telegram.org/bot{BOT_TOKEN}"
 
 PRODUCT_NAME = "Website Access"
-PRICE = "RM10"
+PRICE = "RM15.9"
 LOW_STOCK_LIMIT = 5
 SUPPORT_LINK = "https://t.me/moviemembership"
 
@@ -354,6 +354,7 @@ def handle_buy(callback):
         f"Stock Left: {stock_count}\n\n"
         f"Please pay using the QR code below.\n"
         f"After payment, send your receipt screenshot here."
+        
     )
 
     send_message(
@@ -423,8 +424,14 @@ def handle_approve(callback):
     send_message(
         customer_id,
         f"Payment Approved ✅\n\n"
-        f"Here is your product:\n\n"
         f"{formatted_item}\n\n"
+        f"Sign in at Netflix apps/Website, Only Gey The Code if they request\n"
+        f"how to sign in with password: https://shorturl.at/BYY3p\n\n"
+        f"Get Sign In Code Here(4-digit): https://mantapnet.onrender.com/sign-in-code-auto\n\n"
+        f"Get Verification Code Here(6-digit): https://mantapnet.onrender.com/verification-code\n\n"
+        f"Video to Get Code: https://youtu.be/S4NgHOICPSc"
+        f"Warranty Period: 28days\n\n"
+        f"If You are unable to sign in please contact customer support\n\n"
         f"Thank you for your purchase."
     )
 
