@@ -78,7 +78,6 @@ def answer_callback(callback_id):
         json={"callback_query_id": callback_id}
     )
 
-
 def main_menu(chat_id):
     stock_count = get_stock_count()
 
@@ -88,7 +87,7 @@ def main_menu(chat_id):
                 {"text": f"Buy Product - {PRICE}", "callback_data": "buy"}
             ],
             [
-                {"text": "Contact Customer Support 💬", "url":"https://t.me/moviemembership"}
+                {"text": "Contact Customer Support 💬", "url": "https://t.me/moviemembership"}
             ]
         ]
     }
@@ -102,7 +101,6 @@ def main_menu(chat_id):
         f"Please choose one option below:",
         keyboard
     )
-
 
 @app.route("/")
 def home():
