@@ -268,6 +268,16 @@ def webhook():
 
     return "OK"
 
+def forward_to_admin(message):
+    requests.post(
+        f"{BASE_URL}/forwardMessage",
+        json={
+            "chat_id": ADMIN_ID,
+            "from_chat_id": message["chat"]["id"],
+            "message_id": message["message_id"]
+        }
+    )
+
 
 def handle_message(message):
     chat_id = message["chat"]["id"]
@@ -300,11 +310,13 @@ def handle_message(message):
 
     # Forward image receipt
     if "photo" in message:
+        forward_to_admin(message)
         handle_receipt(message)
         return
 
     # Forward PDF/document receipt
     if "document" in message:
+        forward_to_admin(message)
         handle_document_receipt(message)
         return
 
@@ -312,6 +324,7 @@ def handle_message(message):
 
 
 def handle_receipt(message):
+    forward_to_admin(message)
     chat_id = message["chat"]["id"]
     user = message["from"]
 
@@ -358,6 +371,7 @@ def handle_receipt(message):
     send_message(chat_id, "Receipt received ✅\nPlease wait for admin approval.")
 
 def handle_document_receipt(message):
+    forward_to_admin(message)
     chat_id = message["chat"]["id"]
     user = message["from"]
 
