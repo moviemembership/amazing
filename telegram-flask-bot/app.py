@@ -298,8 +298,14 @@ def handle_message(message):
 
             return
 
+    # Forward image receipt
     if "photo" in message:
         handle_receipt(message)
+        return
+
+    # Forward PDF/document receipt
+    if "document" in message:
+        handle_document_receipt(message)
         return
 
     main_menu(chat_id)
@@ -337,7 +343,67 @@ def handle_receipt(message):
         reply_markup=keyboard
     )
 
+    keyboard = {
+        "inline_keyboard": [
+            [
+                {"text": "Approve ✅", "callback_data": f"approve:{chat_id}"},
+                {"text": "Reject ❌", "callback_data": f"reject:{chat_id}"}
+            ],
+            [
+                {"text": "Message 💬", "callback_data": f"message:{chat_id}"}
+            ]
+        ]
+    }
+
     send_message(chat_id, "Receipt received ✅\nPlease wait for admin approval.")
+
+def handle_document_receipt(message):
+    chat_id = message["chat"]["id"]
+    user = message["from"]
+
+    username = user.get("username", "No username")
+    name = user.get("first_name", "")
+    document = message["document"]
+
+    file_id = document["file_id"]
+    file_name = document.get("file_name", "receipt.pdf")
+    mime_type = document.get("mime_type", "unknown")
+
+    keyboard = {
+        "inline_keyboard": [
+            [
+                {"text": "Approve ✅", "callback_data": f"approve:{chat_id}"},
+                {"text": "Reject ❌", "callback_data": f"reject:{chat_id}"}
+            ],
+            [
+                {"text": "Message 💬", "callback_data": f"message:{chat_id}"}
+            ]
+        ]
+    }
+
+    data = {
+        "chat_id": ADMIN_ID,
+        "document": file_id,
+        "caption": (
+            f"Document Receipt Received 🧾\n\n"
+            f"Customer: @{username}\n"
+            f"Name: {name}\n"
+            f"Telegram ID: {chat_id}\n"
+            f"File Name: {file_name}\n"
+            f"File Type: {mime_type}\n"
+            f"Product: {PRODUCT_NAME}\n"
+            f"Price: {PRICE}\n"
+            f"Stock Left Now: {get_stock_count()}"
+        ),
+        "reply_markup": keyboard
+    }
+
+    requests.post(f"{BASE_URL}/sendDocument", json=data)
+
+    send_message(
+        chat_id,
+        "Receipt received ✅\nPlease wait for admin approval."
+    )
 
 
 def handle_callback(callback):
