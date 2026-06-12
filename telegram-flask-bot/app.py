@@ -430,7 +430,7 @@ def handle_approve(callback):
         f"how to sign in with password: https://shorturl.at/BYY3p\n\n"
         f"Get Sign In Code Here(4-digit): https://mantapnet.onrender.com/sign-in-code-auto\n\n"
         f"Get Verification Code Here(6-digit): https://mantapnet.onrender.com/verification-code\n\n"
-        f"Video to Get Code: https://youtu.be/S4NgHOICPSc"
+        f"Video to Get Code: https://youtu.be/S4NgHOICPSc\n\n"
         f"Warranty Period: 28days\n\n"
         f"If You are unable to sign in please contact customer support\n\n"
         f"Thank you for your purchase."
