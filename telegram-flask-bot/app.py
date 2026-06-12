@@ -324,7 +324,6 @@ def handle_message(message):
 
 
 def handle_receipt(message):
-    forward_to_admin(message)
     chat_id = message["chat"]["id"]
     user = message["from"]
 
@@ -371,7 +370,6 @@ def handle_receipt(message):
     send_message(chat_id, "Receipt received ✅\nPlease wait for admin approval.")
 
 def handle_document_receipt(message):
-    forward_to_admin(message)
     chat_id = message["chat"]["id"]
     user = message["from"]
 
