@@ -348,17 +348,17 @@ def handle_callback(callback):
     if data == "buy":
         handle_buy(callback)
 
+    elif data.startswith("remind:"):
+        handle_remind(callback)
+
+    elif data.startswith("message:"):
+        handle_message_button(callback)
+
     elif data.startswith("approve:"):
         handle_approve(callback)
 
     elif data.startswith("reject:"):
         handle_reject(callback)
-
-    elif data.startswith("remind:"):
-    handle_remind(callback)
-
-    elif data.startswith("message:"):
-        handle_message_button(callback)
 
 
 def handle_buy(callback):
