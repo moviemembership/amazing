@@ -272,6 +272,32 @@ def webhook():
 def handle_message(message):
     chat_id = message["chat"]["id"]
 
+    # Admin command: /msg telegram_id message
+    if chat_id == ADMIN_ID and "text" in message:
+        text = message["text"]
+
+        if text.startswith("/msg "):
+            parts = text.split(" ", 2)
+
+            if len(parts) < 3:
+                send_message(ADMIN_ID, "Format:\n/msg TELEGRAM_ID your message")
+                return
+
+            target_id = parts[1]
+            msg_content = parts[2]
+
+            send_message(
+                target_id,
+                f"Message from admin 💬\n\n{msg_content}"
+            )
+
+            send_message(
+                ADMIN_ID,
+                f"Message sent ✅\n\nTo: {target_id}\nMessage: {msg_content}"
+            )
+
+            return
+
     if "photo" in message:
         handle_receipt(message)
         return
@@ -328,6 +354,12 @@ def handle_callback(callback):
     elif data.startswith("reject:"):
         handle_reject(callback)
 
+    elif data.startswith("remind:"):
+    handle_remind(callback)
+
+    elif data.startswith("message:"):
+        handle_message_button(callback)
+
 
 def handle_buy(callback):
     chat_id = callback["message"]["chat"]["id"]
@@ -354,8 +386,16 @@ def handle_buy(callback):
         f"Stock Left: {stock_count}\n\n"
         f"Please pay using the QR code below.\n"
         f"After payment, send your receipt screenshot here."
-        
     )
+
+    admin_keyboard = {
+        "inline_keyboard": [
+            [
+                {"text": "Remind 🔔", "callback_data": f"remind:{chat_id}"},
+                {"text": "Message 💬", "callback_data": f"message:{chat_id}"}
+            ]
+        ]
+    }
 
     send_message(
         ADMIN_ID,
@@ -363,7 +403,8 @@ def handle_buy(callback):
         f"Customer: @{username}\n"
         f"Name: {name}\n"
         f"Telegram ID: {chat_id}\n"
-        f"Stock Before Payment: {stock_count}"
+        f"Stock Before Payment: {stock_count}",
+        admin_keyboard
     )
 
     send_photo_file(chat_id, "qr.png", "Scan QR and complete payment.")
@@ -436,13 +477,22 @@ def handle_approve(callback):
         f"Thank you for your purchase."
     )
 
+    admin_keyboard = {
+        "inline_keyboard": [
+            [
+                {"text": "Message 💬", "callback_data": f"message:{customer_id}"}
+            ]
+        ]
+    }
+    
     send_message(
         ADMIN_ID,
         f"Order Completed ✅\n\n"
         f"Customer ID: {customer_id}\n"
         f"Delivered:\n\n"
         f"{formatted_item}\n\n"
-        f"Remaining Stock: {remaining}"
+        f"Remaining Stock: {remaining}",
+        admin_keyboard
     )
 
     if remaining <= LOW_STOCK_LIMIT:
@@ -458,6 +508,39 @@ def handle_reject(callback):
 
     send_message(customer_id, "Payment rejected ❌\nPlease check your receipt and send again.")
     send_message(ADMIN_ID, f"Order rejected ❌\nCustomer ID: {customer_id}")
+
+def handle_remind(callback):
+    if callback["from"]["id"] != ADMIN_ID:
+        send_message(callback["from"]["id"], "You are not allowed to do this.")
+        return
+
+    customer_id = int(callback["data"].split(":")[1])
+
+    send_message(
+        customer_id,
+        "Payment Reminder 🔔\n\n"
+        "Your order is still pending payment.\n"
+        "Please complete payment and send your receipt here."
+    )
+
+    send_message(
+        ADMIN_ID,
+        f"Reminder sent ✅\n\nCustomer ID: {customer_id}"
+    )
+
+
+def handle_message_button(callback):
+    if callback["from"]["id"] != ADMIN_ID:
+        send_message(callback["from"]["id"], "You are not allowed to do this.")
+        return
+
+    customer_id = callback["data"].split(":")[1]
+
+    send_message(
+        ADMIN_ID,
+        f"To message this customer, type:\n\n"
+        f"/msg {customer_id} your message here"
+    )
 
 
 @app.route("/admin", methods=["GET", "POST"])
