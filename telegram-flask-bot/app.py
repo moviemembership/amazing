@@ -340,6 +340,18 @@ def handle_receipt(message):
     name = user.get("first_name", "")
     photo_id = message["photo"][-1]["file_id"]
 
+    keyboard = {
+        "inline_keyboard": [
+            [
+                {"text": "Approve ✅", "callback_data": f"approve:{chat_id}"},
+                {"text": "Reject ❌", "callback_data": f"reject:{chat_id}"}
+            ],
+            [
+                {"text": "Message 💬", "callback_data": f"message:{chat_id}"}
+            ]
+        ]
+    }
+
     send_photo_by_file_id(
         ADMIN_ID,
         photo_id,
@@ -354,18 +366,6 @@ def handle_receipt(message):
         ),
         reply_markup=keyboard
     )
-
-    keyboard = {
-        "inline_keyboard": [
-            [
-                {"text": "Approve ✅", "callback_data": f"approve:{chat_id}"},
-                {"text": "Reject ❌", "callback_data": f"reject:{chat_id}"}
-            ],
-            [
-                {"text": "Message 💬", "callback_data": f"message:{chat_id}"}
-            ]
-        ]
-    }
 
     send_message(chat_id, "Receipt received ✅\nPlease wait for admin approval.")
 
