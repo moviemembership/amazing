@@ -880,15 +880,7 @@ def admin():
             
             .edit-btn:hover {{
                 background:#1d4ed8;
-            }}
-            .filter-form {{
-                display:grid;
-                grid-template-columns:80px 1fr 50px 1fr auto auto;
-                gap:10px;
-                align-items:center;
-                margin-bottom:15px;
-            }}
-            
+            }}        
             .clear-btn {{
                 display:inline-block;
                 padding:10px 16px;
@@ -899,11 +891,11 @@ def admin():
                 font-weight:600;
             }}
             .filter-form {{
-                display:grid;
-                grid-template-columns:2fr 1fr 1fr auto auto;
+                display:flex;
                 gap:10px;
                 align-items:center;
                 margin-bottom:15px;
+                flex-wrap:wrap;
             }}
             
             .clear-btn {{
@@ -976,19 +968,36 @@ def admin():
         </button>
             <h2>Orders</h2>
 
-            <form method="GET" class="filter-form">
-                <input type="hidden" name="key" value="{html.escape(ADMIN_KEY)}">
-            
-                <label>From</label>
-                <input type="date" name="date_from" value="{html.escape(date_from)}">
-            
-                <label>To</label>
-                <input type="date" name="date_to" value="{html.escape(date_to)}">
-            
-                <button type="submit">Filter Date</button>
-            
-                <a class="clear-btn" href="/admin?key={ADMIN_KEY}">Clear</a>
-            </form>
+        <form method="GET" class="filter-form">
+        
+            <input type="hidden" name="key" value="{ADMIN_KEY}">
+        
+            <input
+                type="text"
+                name="search"
+                placeholder="Search Telegram ID / Email / Username"
+                value="{html.escape(search)}">
+        
+            <input
+                type="date"
+                name="date_from"
+                value="{html.escape(date_from)}">
+        
+            <input
+                type="date"
+                name="date_to"
+                value="{html.escape(date_to)}">
+        
+            <button type="submit">
+                Search
+            </button>
+        
+            <a class="clear-btn"
+               href="/admin?key={ADMIN_KEY}">
+               Clear
+            </a>
+        
+        </form>
 
             <form method="POST">
                 <input type="hidden" name="action" value="delete_orders">
