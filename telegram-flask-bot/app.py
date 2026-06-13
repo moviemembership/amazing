@@ -803,48 +803,34 @@ def admin():
                 border-radius: 5px;
             }}
             table {{
-                border-collapse: collapse;
-                width: 100%;
-                background: white;
-            }}
-            th, td {{
-                border: 1px solid #ccc;
-                padding: 8px;
-                vertical-align: top;
-            }}
-            pre {{
-                white-space: pre-wrap;
-                margin: 0;
-            }}
-            table{
                 border-collapse:collapse;
                 width:100%;
                 overflow:hidden;
                 border-radius:12px;
                 background:white;
-            }
+            }}
             
-            th{
+            th {{
                 background:#eff6ff;
-            }
+            }}
             
-            th,td{
+            th,td {{
                 padding:12px;
                 border-bottom:1px solid #e5e7eb;
-            }
-            .stats{
+            }}
+            .stats{{
                 display:flex;
                 gap:20px;
                 margin-bottom:20px;
-            }
+            }}
             
-            .stat-card{
+            .stat-card{{
                 flex:1;
                 background:white;
                 padding:20px;
                 border-radius:16px;
                 box-shadow:0 4px 20px rgba(0,0,0,.06);
-            }
+            }}
         </style>
     </head>
     <body>
