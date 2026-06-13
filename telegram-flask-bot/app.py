@@ -346,9 +346,10 @@ def handle_receipt(message):
                 {"text": "Approve ✅", "callback_data": f"approve:{chat_id}"},
                 {"text": "Reject ❌", "callback_data": f"reject:{chat_id}"}
             ],
-            [
-                {"text": "Message 💬", "callback_data": f"message:{chat_id}"}
-            ]
+            {
+                "text": "Message 💬",
+                "switch_inline_query_current_chat": f"/msg {chat_id} "
+            }
         ]
     }
 
@@ -387,9 +388,10 @@ def handle_document_receipt(message):
                 {"text": "Approve ✅", "callback_data": f"approve:{chat_id}"},
                 {"text": "Reject ❌", "callback_data": f"reject:{chat_id}"}
             ],
-            [
-                {"text": "Message 💬", "callback_data": f"message:{chat_id}"}
-            ]
+            {
+                "text": "Message 💬",
+                "switch_inline_query_current_chat": f"/msg {chat_id} "
+            }
         ]
     }
 
@@ -471,7 +473,10 @@ def handle_buy(callback):
         "inline_keyboard": [
             [
                 {"text": "Remind 🔔", "callback_data": f"remind:{chat_id}"},
-                {"text": "Message 💬", "callback_data": f"message:{chat_id}"}
+                {
+                "text": "Message 💬",
+                "switch_inline_query_current_chat": f"/msg {chat_id} "
+            }
             ]
         ]
     }
@@ -577,7 +582,10 @@ def handle_approve(callback):
     admin_keyboard = {
         "inline_keyboard": [
             [
-                {"text": "Message 💬", "callback_data": f"message:{customer_id}"}
+                {
+                "text": "Message 💬",
+                "switch_inline_query_current_chat": f"/msg {chat_id} "
+            }
             ]
         ]
     }
