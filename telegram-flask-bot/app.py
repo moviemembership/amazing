@@ -994,8 +994,9 @@ def edit_order():
                 return redirect(f"/admin?key={ADMIN_KEY}")
 
             if is_new:
-                cur.execute("SELECT NOW() AT TIME ZONE 'Asia/Kuala_Lumpur';")
-                now_time = cur.fetchone()[0].strftime("%Y-%m-%dT%H:%M")
+                cur.execute("SELECT NOW() AT TIME ZONE 'Asia/Kuala_Lumpur' AS now_time;")
+                now_row = cur.fetchone()
+                now_time = now_row["now_time"].strftime("%Y-%m-%dT%H:%M")
 
                 order = {
                     "id": "NEW",
