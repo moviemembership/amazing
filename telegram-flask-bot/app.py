@@ -640,7 +640,6 @@ def handle_message_button(callback):
         f"/msg {customer_id} your message here"
     )
 
-
 @app.route("/admin", methods=["GET", "POST"])
 def admin():
     if request.args.get("key") != ADMIN_KEY:
@@ -749,13 +748,31 @@ def admin():
             <td><pre>{html.escape(str(o.get('formatted_item') or ''))}</pre></td>
             <td>{html.escape(str(o.get('status') or ''))}</td>
             <td>{html.escape(str(o.get('created_at') or ''))}</td>
+            <td>
+                <a href="/edit_order?id={o['id']}&key={ADMIN_KEY}">
+                    <button>Edit</button>
+                </a>
+            </td>
         </tr>
         """
 
     return f"""
     <html>
     <head>
-        <title>Telegram Bot Admin</title>
+        <title>MovieMembership Admin</title>
+        <div class="stats">
+        
+        <div class="stat-card">
+        <h3>Available Accounts</h3>
+        <h1>{available_count}</h1>
+        </div>
+        
+        <div class="stat-card">
+        <h3>Total Orders</h3>
+        <h1>{len(orders)}</h1>
+        </div>
+        
+        </div>
         <style>
             body {{
                 font-family: Arial;
@@ -799,6 +816,35 @@ def admin():
                 white-space: pre-wrap;
                 margin: 0;
             }}
+            table{
+                border-collapse:collapse;
+                width:100%;
+                overflow:hidden;
+                border-radius:12px;
+                background:white;
+            }
+            
+            th{
+                background:#eff6ff;
+            }
+            
+            th,td{
+                padding:12px;
+                border-bottom:1px solid #e5e7eb;
+            }
+            .stats{
+                display:flex;
+                gap:20px;
+                margin-bottom:20px;
+            }
+            
+            .stat-card{
+                flex:1;
+                background:white;
+                padding:20px;
+                border-radius:16px;
+                box-shadow:0 4px 20px rgba(0,0,0,.06);
+            }
         </style>
     </head>
     <body>
@@ -860,6 +906,7 @@ def admin():
                         <th>Delivered Item</th>
                         <th>Status</th>
                         <th>Date</th>
+                        <th>Actions</th>
                     </tr>
                     {order_rows}
                 </table>
@@ -877,3 +924,151 @@ def admin():
     </body>
     </html>
     """
+
+@app.route("/edit_order", methods=["GET", "POST"])
+def edit_order():
+
+    if request.args.get("key") != ADMIN_KEY:
+        return "Unauthorized", 403
+
+    order_id = request.args.get("id")
+
+    with db() as conn:
+        with conn.cursor(cursor_factory=RealDictCursor) as cur:
+
+            if request.method == "POST":
+
+                cur.execute("""
+                    UPDATE orders
+                    SET
+                        telegram_id=%s,
+                        username=%s,
+                        formatted_item=%s,
+                        raw_item=%s,
+                        updated_at=CURRENT_TIMESTAMP
+                    WHERE id=%s
+                """, (
+                    request.form["telegram_id"],
+                    request.form["username"],
+                    request.form["formatted_item"],
+                    request.form["raw_item"],
+                    order_id
+                ))
+
+                conn.commit()
+
+                return redirect(f"/admin?key={ADMIN_KEY}")
+
+            cur.execute(
+                "SELECT * FROM orders WHERE id=%s",
+                (order_id,)
+            )
+
+            order = cur.fetchone()
+
+    return f"""
+        <html>
+        <head>
+        <title>Edit Order</title>
+        
+        <style>
+        
+        body {{
+            background:#f1f5f9;
+            font-family:Arial,sans-serif;
+            padding:30px;
+        }}
+        
+        .card {{
+            max-width:800px;
+            margin:auto;
+            background:white;
+            padding:30px;
+            border-radius:15px;
+            box-shadow:0 4px 20px rgba(0,0,0,.08);
+        }}
+        
+        h2 {{
+            margin-top:0;
+        }}
+        
+        input, textarea {{
+            width:100%;
+            padding:12px;
+            border:1px solid #ddd;
+            border-radius:8px;
+            margin-top:5px;
+            margin-bottom:15px;
+            box-sizing:border-box;
+        }}
+        
+        textarea {{
+            min-height:120px;
+        }}
+        
+        button {{
+            background:#2563eb;
+            color:white;
+            border:none;
+            padding:12px 20px;
+            border-radius:8px;
+            cursor:pointer;
+        }}
+        
+        button:hover {{
+            background:#1d4ed8;
+        }}
+        
+        .back {{
+            text-decoration:none;
+            color:#2563eb;
+        }}
+        
+        </style>
+        
+        </head>
+        
+        <body>
+        
+        <div class="card">
+        
+            <h2>Edit Order #{order['id']}</h2>
+        
+            <a class="back"
+               href="/admin?key={ADMIN_KEY}">
+               ← Back to Admin
+            </a>
+        
+            <br><br>
+        
+            <form method="POST">
+        
+                <label>Telegram ID</label>
+                <input
+                    name="telegram_id"
+                    value="{order['telegram_id']}">
+        
+                <label>Username</label>
+                <input
+                    name="username"
+                    value="{order.get('username','')}">
+        
+                <label>Raw Item</label>
+                <textarea
+                    name="raw_item">{order.get('raw_item','')}</textarea>
+        
+                <label>Formatted Item</label>
+                <textarea
+                    name="formatted_item">{order.get('formatted_item','')}</textarea>
+        
+                <button type="submit">
+                    Save Changes
+                </button>
+        
+            </form>
+        
+        </div>
+        
+        </body>
+        </html>
+        """
