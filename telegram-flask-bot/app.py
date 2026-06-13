@@ -749,8 +749,8 @@ def admin():
             <td>{html.escape(str(o.get('status') or ''))}</td>
             <td>{html.escape(str(o.get('created_at') or ''))}</td>
             <td>
-                <a href="/edit_order?id={o['id']}&key={ADMIN_KEY}">
-                    <button>Edit</button>
+                <a class="edit-btn" href="/edit_order?id={o['id']}&key={ADMIN_KEY}">
+                    Edit
                 </a>
             </td>
         </tr>
@@ -830,6 +830,20 @@ def admin():
                 padding:20px;
                 border-radius:16px;
                 box-shadow:0 4px 20px rgba(0,0,0,.06);
+            }}
+            .edit-btn {{
+                display:inline-block;
+                padding:8px 12px;
+                background:#2563eb;
+                color:white;
+                text-decoration:none;
+                border-radius:8px;
+                font-size:14px;
+                font-weight:600;
+            }}
+            
+            .edit-btn:hover {{
+                background:#1d4ed8;
             }}
         </style>
     </head>
