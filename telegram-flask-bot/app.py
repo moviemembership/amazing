@@ -4,6 +4,7 @@ import requests
 import psycopg2
 from psycopg2.extras import RealDictCursor
 from flask import Flask, request, redirect
+import time
 
 app = Flask(__name__)
 
@@ -19,6 +20,7 @@ PRICE = "RM15.9"
 LOW_STOCK_LIMIT = 5
 SUPPORT_LINK = "https://t.me/moviemembership"
 
+recent_reminders = {}
 
 def db():
     conn = psycopg2.connect(
@@ -97,10 +99,17 @@ def send_photo_by_file_id(chat_id, file_id, caption="", reply_markup=None):
 
 
 def answer_callback(callback_id):
-    requests.post(
-        f"{BASE_URL}/answerCallbackQuery",
-        json={"callback_query_id": callback_id}
-    )
+    try:
+        requests.post(
+            f"{BASE_URL}/answerCallbackQuery",
+            json={
+                "callback_query_id": callback_id,
+                "text": "Processing..."
+            },
+            timeout=5
+        )
+    except:
+        pass
 
 
 def format_item(raw_item):
@@ -330,15 +339,6 @@ def handle_receipt(message):
     username = user.get("username", "No username")
     name = user.get("first_name", "")
     photo_id = message["photo"][-1]["file_id"]
-
-    keyboard = {
-        "inline_keyboard": [
-            [
-                {"text": "Approve ✅", "callback_data": f"approve:{chat_id}"},
-                {"text": "Reject ❌", "callback_data": f"reject:{chat_id}"}
-            ]
-        ]
-    }
 
     send_photo_by_file_id(
         ADMIN_ID,
@@ -592,7 +592,8 @@ def handle_remind(callback):
         send_message(callback["from"]["id"], "You are not allowed to do this.")
         return
 
-    customer_id = int(callback["data"].split(":")[1])
+    parts = callback["data"].split(":")
+    customer_id = int(parts[1])
 
     send_message(
         customer_id,
