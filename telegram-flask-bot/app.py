@@ -952,36 +952,41 @@ def edit_order():
                 telegram_id = request.form["telegram_id"]
                 username = request.form["username"]
                 raw_item = request.form["raw_item"]
-                formatted_item = request.form["formatted_item"]
+                created_at = request.form["created_at"]
+                formatted_item = format_item(raw_item)
 
                 if is_new:
                     cur.execute("""
                         INSERT INTO orders
-                        (telegram_id, username, raw_item, formatted_item, delivered_item, status)
-                        VALUES (%s, %s, %s, %s, %s, 'completed');
+                        (telegram_id, username, raw_item, formatted_item, delivered_item, status, created_at, updated_at)
+                        VALUES (%s, %s, %s, %s, %s, 'completed', %s, %s);
                     """, (
                         telegram_id,
                         username,
                         raw_item,
                         formatted_item,
-                        raw_item
+                        raw_item,
+                        created_at,
+                        created_at
                     ))
                 else:
                     cur.execute("""
                         UPDATE orders
                         SET telegram_id=%s,
                             username=%s,
-                            formatted_item=%s,
                             raw_item=%s,
+                            formatted_item=%s,
                             delivered_item=%s,
+                            created_at=%s,
                             updated_at=CURRENT_TIMESTAMP
                         WHERE id=%s;
                     """, (
                         telegram_id,
                         username,
+                        raw_item,
                         formatted_item,
                         raw_item,
-                        raw_item,
+                        created_at,
                         order_id
                     ))
 
@@ -989,21 +994,30 @@ def edit_order():
                 return redirect(f"/admin?key={ADMIN_KEY}")
 
             if is_new:
+                cur.execute("SELECT NOW() AT TIME ZONE 'Asia/Kuala_Lumpur';")
+                now_time = cur.fetchone()[0].strftime("%Y-%m-%dT%H:%M")
+
                 order = {
                     "id": "NEW",
                     "telegram_id": "",
                     "username": "",
                     "raw_item": "",
-                    "formatted_item": ""
+                    "created_at": now_time
                 }
             else:
                 cur.execute("SELECT * FROM orders WHERE id=%s", (order_id,))
                 order = cur.fetchone()
 
+                if order["created_at"]:
+                    order["created_at"] = order["created_at"].strftime("%Y-%m-%dT%H:%M")
+
+    preview = format_item(order.get("raw_item", ""))
+
     return f"""
     <html>
     <head>
     <title>{'Add Order' if is_new else 'Edit Order'}</title>
+
     <style>
     body {{
         background:#f1f5f9;
@@ -1029,6 +1043,14 @@ def edit_order():
     }}
     textarea {{
         min-height:120px;
+    }}
+    .preview {{
+        background:#f8fafc;
+        border:1px solid #e5e7eb;
+        padding:15px;
+        border-radius:8px;
+        white-space:pre-wrap;
+        margin-bottom:15px;
     }}
     button {{
         background:#2563eb;
@@ -1063,10 +1085,13 @@ def edit_order():
             <input name="username" value="{html.escape(str(order.get('username','')))}">
 
             <label>Raw Item</label>
-            <textarea name="raw_item">{html.escape(str(order.get('raw_item','')))}</textarea>
+            <textarea id="raw_item" name="raw_item">{html.escape(str(order.get('raw_item','')))}</textarea>
 
-            <label>Formatted Item</label>
-            <textarea name="formatted_item">{html.escape(str(order.get('formatted_item','')))}</textarea>
+            <label>Preview Auto Generated</label>
+            <pre id="preview" class="preview">{html.escape(preview)}</pre>
+
+            <label>Order Time</label>
+            <input type="datetime-local" name="created_at" value="{html.escape(str(order.get('created_at','')))}">
 
             <button type="submit">
                 {'Add Order' if is_new else 'Save Changes'}
@@ -1075,6 +1100,24 @@ def edit_order():
         </form>
 
     </div>
+
+    <script>
+    function makePreview(text) {{
+        let parts = text.split("----");
+        if (parts.length === 3) {{
+            return "Email: " + parts[0] + "\\nPassword: " + parts[1] + "\\nProfile: " + parts[2];
+        }}
+        if (parts.length === 2) {{
+            return "Email: " + parts[0] + "\\nPassword: " + parts[1];
+        }}
+        return text;
+    }}
+
+    document.getElementById("raw_item").addEventListener("input", function() {{
+        document.getElementById("preview").textContent = makePreview(this.value);
+    }});
+    </script>
+
     </body>
     </html>
     """
