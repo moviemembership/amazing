@@ -715,51 +715,51 @@ def admin():
     date_to = request.args.get("date_to", "")
     search = request.args.get("search", "").strip()
 
-with db() as conn:
-    with conn.cursor(cursor_factory=RealDictCursor) as cur:
-        cur.execute("""
-            SELECT raw_item
-            FROM stock
-            WHERE status = 'available'
-            ORDER BY id ASC;
-        """)
+    with db() as conn:
+        with conn.cursor(cursor_factory=RealDictCursor) as cur:
+            cur.execute("""
+                SELECT raw_item
+                FROM stock
+                WHERE status = 'available'
+                ORDER BY id ASC;
+            """)
 
-        stock_items = cur.fetchall()
+            stock_items = cur.fetchall()
 
-        query = """
-            SELECT *,
-                   DATE_PART('day', NOW() - created_at) AS order_age
-            FROM orders
-            WHERE 1=1
-        """
-
-        params = []
-
-        if date_from:
-            query += " AND DATE(created_at) >= %s"
-            params.append(date_from)
-
-        if date_to:
-            query += " AND DATE(created_at) <= %s"
-            params.append(date_to)
-
-        if search:
-            query += """
-                AND (
-                    CAST(id AS TEXT) ILIKE %s OR
-                    CAST(telegram_id AS TEXT) ILIKE %s OR
-                    username ILIKE %s OR
-                    raw_item ILIKE %s OR
-                    formatted_item ILIKE %s
-                )
+            query = """
+                SELECT *,
+                       DATE_PART('day', NOW() - created_at) AS order_age
+                FROM orders
+                WHERE 1=1
             """
-            s = f"%{search}%"
-            params.extend([s, s, s, s, s])
 
-        query += " ORDER BY created_at DESC LIMIT 500;"
+            params = []
 
-        cur.execute(query, params)
-        orders = cur.fetchall()
+            if date_from:
+                query += " AND DATE(created_at) >= %s"
+                params.append(date_from)
+
+            if date_to:
+                query += " AND DATE(created_at) <= %s"
+                params.append(date_to)
+
+            if search:
+                query += """
+                    AND (
+                        CAST(id AS TEXT) ILIKE %s OR
+                        CAST(telegram_id AS TEXT) ILIKE %s OR
+                        COALESCE(username, '') ILIKE %s OR
+                        COALESCE(raw_item, '') ILIKE %s OR
+                        COALESCE(formatted_item, '') ILIKE %s
+                    )
+                """
+                s = f"%{search}%"
+                params.extend([s, s, s, s, s])
+
+            query += " ORDER BY created_at DESC LIMIT 500;"
+
+            cur.execute(query, params)
+            orders = cur.fetchall()
 
     account_text = "\n".join([s["raw_item"] for s in stock_items])
     available_count = len(stock_items)
@@ -768,12 +768,12 @@ with db() as conn:
 
     for o in orders:
         age = int(o.get("order_age") or 0)
-    
+
         if age >= 28:
             warranty_badge = '<span class="expired">Expired</span>'
         else:
             warranty_badge = f'<span class="active">Day {age + 1}/28</span>'
-    
+
         order_rows += f"""
         <tr>
             <td><input type="checkbox" name="order_ids" value="{o['id']}"></td>
@@ -791,7 +791,7 @@ with db() as conn:
             </td>
         </tr>
         """
-
+        
     return f"""
     <html>
     <head>
