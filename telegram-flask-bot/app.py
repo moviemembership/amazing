@@ -713,51 +713,53 @@ def admin():
 
     date_from = request.args.get("date_from", "")
     date_to = request.args.get("date_to", "")
+    search = request.args.get("search", "").strip()
 
-    with db() as conn:
-        with conn.cursor(cursor_factory=RealDictCursor) as cur:
-            cur.execute("""
-                SELECT raw_item
-                FROM stock
-                WHERE status = 'available'
-                ORDER BY id ASC;
-            """)
+with db() as conn:
+    with conn.cursor(cursor_factory=RealDictCursor) as cur:
+        cur.execute("""
+            SELECT raw_item
+            FROM stock
+            WHERE status = 'available'
+            ORDER BY id ASC;
+        """)
 
-            stock_items = cur.fetchall()
+        stock_items = cur.fetchall()
 
-            if date_from and date_to:
-                cur.execute("""
-                    SELECT *
-                    FROM orders
-                    WHERE DATE(created_at) BETWEEN %s AND %s
-                    ORDER BY created_at DESC;
-                """, (date_from, date_to))
-            
-            elif date_from:
-                cur.execute("""
-                    SELECT *
-                    FROM orders
-                    WHERE DATE(created_at) >= %s
-                    ORDER BY created_at DESC;
-                """, (date_from,))
-            
-            elif date_to:
-                cur.execute("""
-                    SELECT *
-                    FROM orders
-                    WHERE DATE(created_at) <= %s
-                    ORDER BY created_at DESC;
-                """, (date_to,))
-            
-            else:
-                cur.execute("""
-                    SELECT *
-                    FROM orders
-                    ORDER BY created_at DESC
-                    LIMIT 300;
-                """)
+        query = """
+            SELECT *,
+                   DATE_PART('day', NOW() - created_at) AS order_age
+            FROM orders
+            WHERE 1=1
+        """
 
-            orders = cur.fetchall()
+        params = []
+
+        if date_from:
+            query += " AND DATE(created_at) >= %s"
+            params.append(date_from)
+
+        if date_to:
+            query += " AND DATE(created_at) <= %s"
+            params.append(date_to)
+
+        if search:
+            query += """
+                AND (
+                    CAST(id AS TEXT) ILIKE %s OR
+                    CAST(telegram_id AS TEXT) ILIKE %s OR
+                    username ILIKE %s OR
+                    raw_item ILIKE %s OR
+                    formatted_item ILIKE %s
+                )
+            """
+            s = f"%{search}%"
+            params.extend([s, s, s, s, s])
+
+        query += " ORDER BY created_at DESC LIMIT 500;"
+
+        cur.execute(query, params)
+        orders = cur.fetchall()
 
     account_text = "\n".join([s["raw_item"] for s in stock_items])
     available_count = len(stock_items)
@@ -765,6 +767,13 @@ def admin():
     order_rows = ""
 
     for o in orders:
+        age = int(o.get("order_age") or 0)
+    
+        if age >= 28:
+            warranty_badge = '<span class="expired">Expired</span>'
+        else:
+            warranty_badge = f'<span class="active">Day {age + 1}/28</span>'
+    
         order_rows += f"""
         <tr>
             <td><input type="checkbox" name="order_ids" value="{o['id']}"></td>
@@ -774,6 +783,7 @@ def admin():
             <td><pre>{html.escape(str(o.get('formatted_item') or ''))}</pre></td>
             <td>{html.escape(str(o.get('status') or ''))}</td>
             <td>{html.escape(str(o.get('created_at') or ''))}</td>
+            <td>{warranty_badge}</td>
             <td>
                 <a class="edit-btn" href="/edit_order?id={o['id']}&key={ADMIN_KEY}">
                     Edit
@@ -888,6 +898,41 @@ def admin():
                 border-radius:8px;
                 font-weight:600;
             }}
+            .filter-form {{
+                display:grid;
+                grid-template-columns:2fr 1fr 1fr auto auto;
+                gap:10px;
+                align-items:center;
+                margin-bottom:15px;
+            }}
+            
+            .clear-btn {{
+                display:inline-block;
+                padding:10px 16px;
+                background:#64748b;
+                color:white;
+                text-decoration:none;
+                border-radius:8px;
+                font-weight:600;
+            }}
+            
+            .expired {{
+                display:inline-block;
+                background:#fee2e2;
+                color:#b91c1c;
+                padding:6px 10px;
+                border-radius:999px;
+                font-weight:700;
+            }}
+            
+            .active {{
+                display:inline-block;
+                background:#dcfce7;
+                color:#166534;
+                padding:6px 10px;
+                border-radius:999px;
+                font-weight:700;
+            }}
         </style>
     </head>
     <body>
@@ -960,6 +1005,7 @@ def admin():
                         <th>Delivered Item</th>
                         <th>Status</th>
                         <th>Date</th>
+                        <th>Warranty</th>
                         <th>Actions</th>
                     </tr>
                     {order_rows}
