@@ -883,6 +883,9 @@ def admin():
         </div>
 
         <div class="card">
+        <button onclick="location.href='/edit_order?new=1&key={ADMIN_KEY}'">
+            + Add New Order
+        </button>
             <h2>Orders</h2>
 
             <form method="GET">
@@ -931,144 +934,139 @@ def edit_order():
     if request.args.get("key") != ADMIN_KEY:
         return "Unauthorized", 403
 
+    is_new = request.args.get("new") == "1"
     order_id = request.args.get("id")
 
     with db() as conn:
         with conn.cursor(cursor_factory=RealDictCursor) as cur:
 
             if request.method == "POST":
+                telegram_id = request.form["telegram_id"]
+                username = request.form["username"]
+                raw_item = request.form["raw_item"]
+                formatted_item = request.form["formatted_item"]
 
-                cur.execute("""
-                    UPDATE orders
-                    SET
-                        telegram_id=%s,
-                        username=%s,
-                        formatted_item=%s,
-                        raw_item=%s,
-                        updated_at=CURRENT_TIMESTAMP
-                    WHERE id=%s
-                """, (
-                    request.form["telegram_id"],
-                    request.form["username"],
-                    request.form["formatted_item"],
-                    request.form["raw_item"],
-                    order_id
-                ))
+                if is_new:
+                    cur.execute("""
+                        INSERT INTO orders
+                        (telegram_id, username, raw_item, formatted_item, delivered_item, status)
+                        VALUES (%s, %s, %s, %s, %s, 'completed');
+                    """, (
+                        telegram_id,
+                        username,
+                        raw_item,
+                        formatted_item,
+                        raw_item
+                    ))
+                else:
+                    cur.execute("""
+                        UPDATE orders
+                        SET telegram_id=%s,
+                            username=%s,
+                            formatted_item=%s,
+                            raw_item=%s,
+                            delivered_item=%s,
+                            updated_at=CURRENT_TIMESTAMP
+                        WHERE id=%s;
+                    """, (
+                        telegram_id,
+                        username,
+                        formatted_item,
+                        raw_item,
+                        raw_item,
+                        order_id
+                    ))
 
                 conn.commit()
-
                 return redirect(f"/admin?key={ADMIN_KEY}")
 
-            cur.execute(
-                "SELECT * FROM orders WHERE id=%s",
-                (order_id,)
-            )
-
-            order = cur.fetchone()
+            if is_new:
+                order = {
+                    "id": "NEW",
+                    "telegram_id": "",
+                    "username": "",
+                    "raw_item": "",
+                    "formatted_item": ""
+                }
+            else:
+                cur.execute("SELECT * FROM orders WHERE id=%s", (order_id,))
+                order = cur.fetchone()
 
     return f"""
-        <html>
-        <head>
-        <title>Edit Order</title>
-        
-        <style>
-        
-        body {{
-            background:#f1f5f9;
-            font-family:Arial,sans-serif;
-            padding:30px;
-        }}
-        
-        .card {{
-            max-width:800px;
-            margin:auto;
-            background:white;
-            padding:30px;
-            border-radius:15px;
-            box-shadow:0 4px 20px rgba(0,0,0,.08);
-        }}
-        
-        h2 {{
-            margin-top:0;
-        }}
-        
-        input, textarea {{
-            width:100%;
-            padding:12px;
-            border:1px solid #ddd;
-            border-radius:8px;
-            margin-top:5px;
-            margin-bottom:15px;
-            box-sizing:border-box;
-        }}
-        
-        textarea {{
-            min-height:120px;
-        }}
-        
-        button {{
-            background:#2563eb;
-            color:white;
-            border:none;
-            padding:12px 20px;
-            border-radius:8px;
-            cursor:pointer;
-        }}
-        
-        button:hover {{
-            background:#1d4ed8;
-        }}
-        
-        .back {{
-            text-decoration:none;
-            color:#2563eb;
-        }}
-        
-        </style>
-        
-        </head>
-        
-        <body>
-        
-        <div class="card">
-        
-            <h2>Edit Order #{order['id']}</h2>
-        
-            <a class="back"
-               href="/admin?key={ADMIN_KEY}">
-               ← Back to Admin
-            </a>
-        
-            <br><br>
-        
-            <form method="POST">
-        
-                <label>Telegram ID</label>
-                <input
-                    name="telegram_id"
-                    value="{order['telegram_id']}">
-        
-                <label>Username</label>
-                <input
-                    name="username"
-                    value="{order.get('username','')}">
-        
-                <label>Raw Item</label>
-                <textarea
-                    name="raw_item">{order.get('raw_item','')}</textarea>
-        
-                <label>Formatted Item</label>
-                <textarea
-                    name="formatted_item">{order.get('formatted_item','')}</textarea>
-        
-                <button type="submit">
-                    Save Changes
-                </button>
-        
-            </form>
-        
-        </div>
-        
-        </body>
-        </html>
-        """
+    <html>
+    <head>
+    <title>{'Add Order' if is_new else 'Edit Order'}</title>
+    <style>
+    body {{
+        background:#f1f5f9;
+        font-family:Arial,sans-serif;
+        padding:30px;
+    }}
+    .card {{
+        max-width:800px;
+        margin:auto;
+        background:white;
+        padding:30px;
+        border-radius:15px;
+        box-shadow:0 4px 20px rgba(0,0,0,.08);
+    }}
+    input, textarea {{
+        width:100%;
+        padding:12px;
+        border:1px solid #ddd;
+        border-radius:8px;
+        margin-top:5px;
+        margin-bottom:15px;
+        box-sizing:border-box;
+    }}
+    textarea {{
+        min-height:120px;
+    }}
+    button {{
+        background:#2563eb;
+        color:white;
+        border:none;
+        padding:12px 20px;
+        border-radius:8px;
+        cursor:pointer;
+    }}
+    .back {{
+        text-decoration:none;
+        color:#2563eb;
+    }}
+    </style>
+    </head>
+
+    <body>
+    <div class="card">
+
+        <h2>{'Add New Order' if is_new else f"Edit Order #{order['id']}"}</h2>
+
+        <a class="back" href="/admin?key={ADMIN_KEY}">← Back to Admin</a>
+
+        <br><br>
+
+        <form method="POST">
+
+            <label>Telegram ID</label>
+            <input name="telegram_id" value="{html.escape(str(order.get('telegram_id','')))}">
+
+            <label>Username</label>
+            <input name="username" value="{html.escape(str(order.get('username','')))}">
+
+            <label>Raw Item</label>
+            <textarea name="raw_item">{html.escape(str(order.get('raw_item','')))}</textarea>
+
+            <label>Formatted Item</label>
+            <textarea name="formatted_item">{html.escape(str(order.get('formatted_item','')))}</textarea>
+
+            <button type="submit">
+                {'Add Order' if is_new else 'Save Changes'}
+            </button>
+
+        </form>
+
+    </div>
+    </body>
+    </html>
+    """
