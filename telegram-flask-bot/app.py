@@ -464,6 +464,7 @@ def handle_buy(callback):
         f"Stock Left: {stock_count}\n\n"
         f"Please pay using the QR code below.\n"
         f"After payment, send your receipt screenshot here."
+        f"⭐Please don't chat with us at Shopee⭐."
     )
 
     admin_keyboard = {
@@ -485,7 +486,7 @@ def handle_buy(callback):
         admin_keyboard
     )
 
-    send_photo_file(chat_id, "qr.png", "Scan QR and complete payment.")
+    send_photo_file(chat_id, "qr.png", "Scan QR and complete payment.\n⭐Please don't chat with us at Shopee⭐")
 
 
 def handle_approve(callback):
@@ -553,6 +554,24 @@ def handle_approve(callback):
         f"Warranty Period: 28days\n\n"
         f"If You are unable to sign in please contact customer support\n\n"
         f"Thank you for your purchase."
+    )
+    
+    support_keyboard = {
+        "inline_keyboard": [
+            [
+                {
+                    "text": "Contact Customer Service 💬",
+                    "url": SUPPORT_LINK
+                }
+            ]
+        ]
+    }
+
+    send_message(
+        customer_id,
+        "⭐ Please don't chat with us at Shopee.\n\n"
+        "For faster support, please contact our customer service here:",
+        support_keyboard
     )
 
     admin_keyboard = {
