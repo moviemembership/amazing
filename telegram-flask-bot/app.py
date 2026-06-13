@@ -463,7 +463,7 @@ def handle_buy(callback):
         f"Price: {PRICE}\n"
         f"Stock Left: {stock_count}\n\n"
         f"Please pay using the QR code below.\n"
-        f"After payment, send your receipt screenshot here."
+        f"After payment, send your receipt screenshot here.\n"
         f"⭐Please don't chat with us at Shopee⭐."
     )
 
@@ -486,7 +486,7 @@ def handle_buy(callback):
         admin_keyboard
     )
 
-    send_photo_file(chat_id, "qr.png", "Scan QR and complete payment.\n⭐Please don't chat with us at Shopee⭐")
+    send_photo_file(chat_id, "qr.png", "Scan QR and complete payment.\n\n⭐Please don't chat with us at Shopee⭐")
 
 
 def handle_approve(callback):
