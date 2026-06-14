@@ -588,7 +588,7 @@ def handle_approve(callback):
             [
                 {
                 "text": "Message 💬",
-                "switch_inline_query_current_chat": f"/msg {chat_id} "
+                "switch_inline_query_current_chat": f"/msg {customer_id} "
             }
             ]
         ]
