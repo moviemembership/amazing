@@ -349,7 +349,7 @@ def handle_receipt(message):
             [
                 {
                     "text": "Message 💬",
-                    "switch_inline_query_current_chat": f"/msg {customer_id} "
+                    "switch_inline_query_current_chat": f"/msg {chat_id} "
                 }
             ]
         ]
@@ -393,7 +393,7 @@ def handle_document_receipt(message):
             [
                 {
                     "text": "Message 💬",
-                    "switch_inline_query_current_chat": f"/msg {customer_id} "
+                    "switch_inline_query_current_chat": f"/msg {chat_id} "
                 }
             ]
         ]
