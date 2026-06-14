@@ -346,10 +346,12 @@ def handle_receipt(message):
                 {"text": "Approve ✅", "callback_data": f"approve:{chat_id}"},
                 {"text": "Reject ❌", "callback_data": f"reject:{chat_id}"}
             ],
-            {
-                "text": "Message 💬",
-                "switch_inline_query_current_chat": f"/msg {chat_id} "
-            }
+            [
+                {
+                    "text": "Message 💬",
+                    "switch_inline_query_current_chat": f"/msg {customer_id} "
+                }
+            ]
         ]
     }
 
@@ -388,10 +390,12 @@ def handle_document_receipt(message):
                 {"text": "Approve ✅", "callback_data": f"approve:{chat_id}"},
                 {"text": "Reject ❌", "callback_data": f"reject:{chat_id}"}
             ],
-            {
-                "text": "Message 💬",
-                "switch_inline_query_current_chat": f"/msg {chat_id} "
-            }
+            [
+                {
+                    "text": "Message 💬",
+                    "switch_inline_query_current_chat": f"/msg {customer_id} "
+                }
+            ]
         ]
     }
 
