@@ -61,6 +61,17 @@ def init_db():
                 );
             """)
 
+            cur.execute("""
+                CREATE TABLE IF NOT EXISTS warranty_reminders (
+                    id SERIAL PRIMARY KEY,
+                    order_id INTEGER NOT NULL
+                        REFERENCES orders(id) ON DELETE CASCADE,
+                    reminder_type TEXT NOT NULL,
+                    sent_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    UNIQUE(order_id, reminder_type)
+                );
+            """)
+
             cur.execute("ALTER TABLE orders ADD COLUMN IF NOT EXISTS raw_item TEXT;")
             cur.execute("ALTER TABLE orders ADD COLUMN IF NOT EXISTS formatted_item TEXT;")
             cur.execute("ALTER TABLE orders ADD COLUMN IF NOT EXISTS delivered_item TEXT;")
@@ -73,9 +84,20 @@ init_db()
 
 def send_message(chat_id, text, reply_markup=None):
     data = {"chat_id": chat_id, "text": text}
+
     if reply_markup:
         data["reply_markup"] = reply_markup
-    requests.post(f"{BASE_URL}/sendMessage", json=data)
+
+    try:
+        response = requests.post(
+            f"{BASE_URL}/sendMessage",
+            json=data,
+            timeout=15
+        )
+        result = response.json()
+        return response.ok and result.get("ok", False)
+    except (requests.RequestException, ValueError):
+        return False
 
 
 def send_photo_file(chat_id, photo_path, caption=""):
@@ -186,6 +208,148 @@ def save_order(telegram_id, username, first_name, raw_item, formatted_item):
                 raw_item
             ))
             conn.commit()
+
+def get_account_email(raw_item):
+    if not raw_item:
+        return ""
+
+    return raw_item.split("----", 1)[0].strip()
+
+
+def message_users_by_account_email(email, message):
+    with db() as conn:
+        with conn.cursor(cursor_factory=RealDictCursor) as cur:
+            cur.execute("""
+                SELECT DISTINCT telegram_id
+                FROM orders
+                WHERE LOWER(
+                    TRIM(
+                        SPLIT_PART(
+                            COALESCE(raw_item, ''),
+                            '----',
+                            1
+                        )
+                    )
+                ) = LOWER(%s)
+                AND telegram_id IS NOT NULL;
+            """, (email.strip(),))
+
+            recipients = cur.fetchall()
+
+    sent = 0
+
+    for recipient in recipients:
+        success = send_message(
+            recipient["telegram_id"],
+            f"Message from admin 💬\n\n{message}"
+        )
+
+        if success:
+            sent += 1
+
+    return sent, len(recipients)
+
+
+def send_due_warranty_reminders():
+    reminders = [
+        {
+            "type": "three_days",
+            "minimum_age": 25,
+            "maximum_age": 28,
+            "message": "Your product warranty expires in 3 days."
+        },
+        {
+            "type": "expired",
+            "minimum_age": 28,
+            "maximum_age": None,
+            "message": "Your 28-day product warranty has expired."
+        }
+    ]
+
+    sent = 0
+    failed = 0
+
+    with db() as conn:
+        with conn.cursor(cursor_factory=RealDictCursor) as cur:
+            for reminder in reminders:
+                query = """
+                    SELECT
+                        o.id,
+                        o.telegram_id,
+                        o.raw_item
+                    FROM orders o
+                    WHERE o.status = 'completed'
+                    AND o.created_at <=
+                        NOW() - (%s * INTERVAL '1 day')
+                    AND NOT EXISTS (
+                        SELECT 1
+                        FROM warranty_reminders wr
+                        WHERE wr.order_id = o.id
+                        AND wr.reminder_type = %s
+                    )
+                """
+
+                params = [
+                    reminder["minimum_age"],
+                    reminder["type"]
+                ]
+
+                if reminder["maximum_age"] is not None:
+                    query += """
+                        AND o.created_at >
+                            NOW() - (%s * INTERVAL '1 day')
+                    """
+                    params.append(reminder["maximum_age"])
+
+                query += " ORDER BY o.created_at ASC;"
+
+                cur.execute(query, params)
+                orders = cur.fetchall()
+
+                for order in orders:
+                    email = get_account_email(order["raw_item"])
+
+                    success = send_message(
+                        order["telegram_id"],
+                        f"Warranty Reminder 🔔\n\n"
+                        f"{reminder['message']}\n"
+                        f"Account: {email or 'Not available'}\n\n"
+                        f"Need help? {SUPPORT_LINK}"
+                    )
+
+                    if success:
+                        cur.execute("""
+                            INSERT INTO warranty_reminders
+                                (order_id, reminder_type)
+                            VALUES (%s, %s)
+                            ON CONFLICT
+                                (order_id, reminder_type)
+                            DO NOTHING;
+                        """, (
+                            order["id"],
+                            reminder["type"]
+                        ))
+
+                        sent += 1
+                    else:
+                        failed += 1
+
+            conn.commit()
+
+    return sent, failed
+
+@app.route("/warranty-reminders", methods=["GET", "POST"])
+def warranty_reminders():
+    if request.args.get("key") != ADMIN_KEY:
+        return {"error": "Unauthorized"}, 403
+
+    sent, failed = send_due_warranty_reminders()
+
+    return {
+        "ok": True,
+        "sent": sent,
+        "failed": failed
+    }
 
 
 def update_orders_replace(old_login, new_login):
@@ -711,7 +875,40 @@ def admin():
                             "DELETE FROM orders WHERE id = %s;",
                             (order_id,)
                         )
+
                     conn.commit()
+
+        elif action == "message_by_email":
+            account_email = request.form.get(
+                "account_email", ""
+            ).strip()
+
+            message_content = request.form.get(
+                "message_content", ""
+            ).strip()
+
+            if account_email and message_content:
+                sent, total = message_users_by_account_email(
+                    account_email,
+                    message_content
+                )
+
+                send_message(
+                    ADMIN_ID,
+                    f"Account email message completed ✅\n\n"
+                    f"Account: {account_email}\n"
+                    f"Delivered: {sent}/{total}"
+                )
+
+        elif action == "run_warranty_reminders":
+            sent, failed = send_due_warranty_reminders()
+
+            send_message(
+                ADMIN_ID,
+                f"Warranty reminders completed ✅\n\n"
+                f"Sent: {sent}\n"
+                f"Failed: {failed}"
+            )
 
         return redirect(f"/admin?key={ADMIN_KEY}")
 
@@ -952,6 +1149,57 @@ def admin():
                 <input name="telegram_id" placeholder="Telegram ID">
                 <input name="manual_item" placeholder="email----password----profile">
                 <button type="submit">Manual Delivery</button>
+            </form>
+        </div>
+
+        <div class="card">
+    <h2>Message Customers by Account Email</h2>
+        
+            <p>
+                Messages every Telegram customer who received
+                this account email.
+            </p>
+        
+            <form method="POST">
+                <input
+                    type="hidden"
+                    name="action"
+                    value="message_by_email">
+        
+                <input
+                    type="email"
+                    name="account_email"
+                    placeholder="Netflix account email"
+                    required>
+        
+                <textarea
+                    name="message_content"
+                    placeholder="Message to customers"
+                    required></textarea>
+        
+                <button type="submit">
+                    Send Message
+                </button>
+            </form>
+        </div>
+        
+        <div class="card">
+            <h2>Warranty Reminders</h2>
+        
+            <p>
+                Sends three-day and expired warranty notices.
+                Each notice is sent only once per order.
+            </p>
+        
+            <form method="POST">
+                <input
+                    type="hidden"
+                    name="action"
+                    value="run_warranty_reminders">
+        
+                <button type="submit">
+                    Run Warranty Reminders
+                </button>
             </form>
         </div>
 
