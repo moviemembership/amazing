@@ -159,3 +159,81 @@ if (
         );
     });
 }
+
+document.querySelectorAll(
+    ".copy-email-button"
+).forEach(function (button) {
+
+    button.addEventListener(
+        "click",
+        async function () {
+
+            const copyType =
+                button.dataset.copyType;
+
+            const email =
+                button.dataset.email;
+
+            const password =
+                button.dataset.password;
+
+            const copyText =
+                copyType +
+                "\n\n" +
+                email +
+                "\n" +
+                "password: " +
+                password +
+                "\n\n" +
+                "Guide to login: " +
+                "https://mantapnet.my/instructions" +
+                "\n\n" +
+                "Get code at " +
+                "https://mantapnet.my/get-code";
+
+            try {
+                await navigator.clipboard.writeText(
+                    copyText
+                );
+
+                const originalText =
+                    button.textContent;
+
+                button.textContent = "Copied";
+
+                setTimeout(function () {
+                    button.textContent =
+                        originalText;
+                }, 1200);
+
+            } catch (error) {
+                const textarea =
+                    document.createElement("textarea");
+
+                textarea.value = copyText;
+                textarea.style.position = "fixed";
+                textarea.style.opacity = "0";
+
+                document.body.appendChild(
+                    textarea
+                );
+
+                textarea.select();
+
+                document.execCommand("copy");
+
+                textarea.remove();
+
+                const originalText =
+                    button.textContent;
+
+                button.textContent = "Copied";
+
+                setTimeout(function () {
+                    button.textContent =
+                        originalText;
+                }, 1200);
+            }
+        }
+    );
+});
