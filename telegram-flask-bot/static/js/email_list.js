@@ -241,3 +241,57 @@ document.querySelectorAll(
         }
     );
 });
+
+const dateSections = document.querySelectorAll(
+    ".email-date-group"
+);
+
+const dateButtons = document.querySelectorAll(
+    ".date-jump-button"
+);
+
+if (
+    dateSections.length > 0 &&
+    dateButtons.length > 0
+) {
+    const dateObserver = new IntersectionObserver(
+        function (entries) {
+            entries.forEach(function (entry) {
+                if (!entry.isIntersecting) {
+                    return;
+                }
+
+                dateButtons.forEach(function (button) {
+                    button.classList.remove("active");
+                });
+
+                const activeButton =
+                    document.querySelector(
+                        '.date-jump-button[href="#' +
+                        entry.target.id +
+                        '"]'
+                    );
+
+                if (activeButton) {
+                    activeButton.classList.add(
+                        "active"
+                    );
+
+                    activeButton.scrollIntoView({
+                        behavior: "smooth",
+                        inline: "center",
+                        block: "nearest"
+                    });
+                }
+            });
+        },
+        {
+            rootMargin: "-80px 0px -75% 0px",
+            threshold: 0
+        }
+    );
+
+    dateSections.forEach(function (section) {
+        dateObserver.observe(section);
+    });
+}
