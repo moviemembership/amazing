@@ -927,9 +927,19 @@ def email_list():
             []
         )
 
+    parents_by_date = {}
+
+    for parent in parents:
+        created_date = parent["created_at"].date()
+    
+        parents_by_date.setdefault(
+            created_date,
+            []
+        ).append(parent)
+
     return render_template(
         "email_list.html",
-        parents=parents,
+        parents_by_date=parents_by_date,
         total_parents=total_parents,
         total_replacements=total_replacements,
         search=search,
