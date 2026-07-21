@@ -164,23 +164,27 @@
                         </div>
 
                         <div class="row-actions">
-
+                        
                             <button
-                                class="button button-small button-soft"
+                                class="button button-small button-soft copy-email-button"
                                 type="button"
-                                data-email-id="{{ parent.id }}"
+                                data-copy-type="ID Baru"
+                                data-email="{{ replacement.email }}"
+                                data-password="{{ replacement.password }}"
                             >
                                 ID Baru
                             </button>
-
+                        
                             <button
-                                class="button button-small button-warm"
+                                class="button button-small button-warm copy-email-button"
                                 type="button"
-                                data-email-id="{{ parent.id }}"
+                                data-copy-type="ID Backup"
+                                data-email="{{ replacement.email }}"
+                                data-password="{{ replacement.password }}"
                             >
                                 ID Backup
                             </button>
-
+                        
                         </div>
 
                     </div>
