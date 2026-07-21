@@ -223,10 +223,10 @@ pre {
 }
 
 .button-small {
-    min-height: 36px;
-    padding: 0 12px;
+    min-height: 32px;
+    padding: 0 10px;
     border-radius: 10px;
-    font-size: 13px;
+    font-size: 12px;
 }
 
 .text-link {
@@ -442,9 +442,9 @@ body.delete-mode #startDeleteButton {
 .parent-row {
     display: grid;
     grid-template-columns: auto minmax(0, 1fr) auto;
-    gap: 16px;
+    gap: 10px;
     align-items: center;
-    padding: 21px;
+    padding: 10px 14px;
 }
 
 .selection-column {
@@ -470,16 +470,16 @@ body.delete-mode .selection-column {
 
 .account-main h3 {
     margin: 0;
-    font-size: 18px;
+    font-size: 15px;
 }
 
 .password-line {
     display: flex;
     gap: 8px;
     flex-wrap: wrap;
-    margin-top: 7px;
+    margin-top: 2px;
     color: var(--muted);
-    font-size: 14px;
+    font-size: 12px;
 }
 
 .password-line strong {
@@ -488,19 +488,20 @@ body.delete-mode .selection-column {
 
 .account-main small {
     display: block;
-    margin-top: 7px;
+    margin-top: 2px;
+    font-size: 11px;
     color: #9b909d;
 }
 
 .replacement-area {
-    padding: 0 21px 18px;
+    padding:0 14px 10px 44px;
 }
 
 .replacement-row {
     display: grid;
     grid-template-columns: 20px minmax(0, 1fr);
     gap: 9px;
-    margin-top: 10px;
+    margin-top: 4px;
 }
 
 .replacement-marker {
@@ -512,14 +513,14 @@ body.delete-mode .selection-column {
 }
 
 .replacement-card {
-    padding: 14px;
+    padding: 8px 10px;
     border: 1px solid #eee3eb;
     border-radius: 15px;
     background: #fcf9fb;
 }
 
 .replacement-title {
-    display: block;
+    display: none;
     margin-bottom: 10px;
     color: #947d93;
     font-size: 11px;
@@ -535,7 +536,7 @@ body.delete-mode .selection-column {
         minmax(170px, 1.4fr)
         minmax(130px, 1fr)
         minmax(110px, 0.7fr);
-    gap: 13px;
+    gap: 8px;
 }
 
 .replacement-grid > div {
