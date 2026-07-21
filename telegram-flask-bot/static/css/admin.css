@@ -1,21 +1,17 @@
 :root {
     --bg: #f6f1f5;
-    --surface: rgba(255, 255, 255, 0.92);
+    --surface: rgba(255, 255, 255, 0.94);
     --surface-solid: #ffffff;
     --text: #403744;
     --muted: #887d8a;
     --line: #e8dde6;
-
     --primary: #8d6e91;
     --primary-dark: #765a7b;
     --primary-soft: #f3ebf2;
-
     --warm: #80654e;
     --warm-soft: #faf2e9;
-
     --danger: #ba5765;
     --danger-soft: #fff3f5;
-
     --shadow: 0 14px 40px rgba(77, 59, 81, 0.07);
 }
 
@@ -24,12 +20,17 @@
 }
 
 html {
+    min-height: 100%;
     scroll-behavior: smooth;
+    overflow-x: hidden;
+    overflow-y: auto;
 }
 
 body {
     margin: 0;
-    min-height: 100vh;
+    min-height: 100%;
+    overflow-x: hidden;
+    overflow-y: auto;
     color: var(--text);
     font-family:
         Inter,
@@ -39,7 +40,6 @@ body {
         BlinkMacSystemFont,
         "Segoe UI",
         sans-serif;
-
     background:
         radial-gradient(
             circle at top left,
@@ -127,15 +127,14 @@ pre {
     font: inherit;
 }
 
-/* =========================
-   PAGE LAYOUT
-========================= */
+/* Page layout */
 
 .admin-shell,
 .email-shell {
     width: min(1180px, calc(100% - 32px));
     margin: 0 auto;
     padding: 34px 0 70px;
+    overflow: visible;
 }
 
 .narrow-shell {
@@ -169,9 +168,7 @@ pre {
     text-transform: uppercase;
 }
 
-/* =========================
-   BUTTONS
-========================= */
+/* Buttons */
 
 .header-actions,
 .form-actions,
@@ -192,23 +189,17 @@ pre {
     justify-content: center;
     min-height: 42px;
     padding: 0 16px;
-
     border: 0;
     border-radius: 12px;
-
     color: #ffffff;
     text-decoration: none;
     font-weight: 800;
-
     background: linear-gradient(
         135deg,
         #ad82a5,
         var(--primary)
     );
-
-    box-shadow:
-        0 10px 22px rgba(128, 94, 132, 0.16);
-
+    box-shadow: 0 10px 22px rgba(128, 94, 132, 0.16);
     transition:
         transform 0.18s ease,
         opacity 0.18s ease;
@@ -269,14 +260,11 @@ pre {
     font-weight: 700;
 }
 
-/* =========================
-   STATS AND PANELS
-========================= */
+/* Stats and panels */
 
 .stats-grid {
     display: grid;
-    grid-template-columns:
-        repeat(2, minmax(0, 1fr));
+    grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 14px;
     margin-bottom: 18px;
 }
@@ -316,8 +304,7 @@ pre {
 
 .admin-grid {
     display: grid;
-    grid-template-columns:
-        repeat(2, minmax(0, 1fr));
+    grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 17px;
     margin-bottom: 18px;
 }
@@ -348,16 +335,12 @@ pre {
 .preview-box {
     min-height: 90px;
     padding: 14px;
-
     border: 1px solid var(--line);
     border-radius: 12px;
-
     background: #fbf8fb;
 }
 
-/* =========================
-   TOOLBARS
-========================= */
+/* Toolbars */
 
 .filter-grid {
     display: grid;
@@ -379,15 +362,11 @@ pre {
         minmax(170px, 210px)
         auto
         auto;
-
     gap: 10px;
-
     padding: 14px;
     margin-bottom: 16px;
-
     border: 1px solid var(--line);
     border-radius: 15px;
-
     background: var(--surface);
     box-shadow: var(--shadow);
 }
@@ -396,14 +375,11 @@ pre {
     margin: 12px 0;
 }
 
-/* =========================
-   ADMIN TABLE
-========================= */
+/* Admin table */
 
 .table-wrap {
     width: 100%;
     overflow-x: auto;
-
     border: 1px solid var(--line);
     border-radius: 13px;
 }
@@ -434,16 +410,12 @@ th {
     text-align: center;
 }
 
-/* =========================
-   BADGES
-========================= */
+/* Badges */
 
 .badge {
     display: inline-flex;
     padding: 5px 9px;
-
     border-radius: 999px;
-
     font-size: 11px;
     font-weight: 800;
 }
@@ -468,16 +440,83 @@ th {
     background: #f7eee5;
 }
 
-/* =========================
-   EMAIL LIST HEADER
-========================= */
+/* Date navigation */
+
+.date-jump-nav {
+    display: grid;
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    gap: 8px;
+    width: 100%;
+    max-height: 145px;
+    margin-bottom: 14px;
+    padding: 10px;
+    overflow-x: hidden;
+    overflow-y: auto;
+    position: static;
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    background: rgba(255, 255, 255, 0.94);
+    backdrop-filter: blur(12px);
+    box-shadow: var(--shadow);
+    scrollbar-width: thin;
+    scrollbar-color: #cdbdca transparent;
+    overscroll-behavior: auto;
+    touch-action: pan-y;
+}
+
+.date-jump-button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 0;
+    min-height: 35px;
+    padding: 0 10px;
+    color: #746777;
+    text-decoration: none;
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    background: #ffffff;
+    font-size: 11px;
+    font-weight: 800;
+    white-space: nowrap;
+    transition:
+        color 0.16s ease,
+        border-color 0.16s ease,
+        background 0.16s ease;
+}
+
+.date-jump-button:hover {
+    color: var(--primary-dark);
+    border-color: #cbb7c8;
+    background: #f8f1f7;
+}
+
+.date-jump-button.active {
+    color: #ffffff;
+    border-color: var(--primary);
+    background: var(--primary);
+}
+
+.date-jump-nav::-webkit-scrollbar {
+    width: 6px;
+}
+
+.date-jump-nav::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.date-jump-nav::-webkit-scrollbar-thumb {
+    border-radius: 999px;
+    background: #cdbdca;
+}
+
+/* Email list */
 
 .list-heading {
     display: flex;
     align-items: center;
     justify-content: space-between;
     gap: 12px;
-
     margin: 18px 0 12px;
 }
 
@@ -498,10 +537,6 @@ body.delete-mode #startDeleteButton {
     display: none;
 }
 
-/* =========================
-   EMAIL DATE GROUPS
-========================= */
-
 .email-date-list {
     display: grid;
     gap: 18px;
@@ -510,12 +545,14 @@ body.delete-mode #startDeleteButton {
 .email-date-group {
     display: grid;
     gap: 6px;
+    scroll-margin-top: 20px;
 }
 
 .email-date-heading {
     display: flex;
     align-items: center;
     gap: 10px;
+    margin-bottom: 6px;
     padding-left: 3px;
 }
 
@@ -527,50 +564,34 @@ body.delete-mode #startDeleteButton {
 }
 
 .email-date-expiry {
-    color: #80654e;
+    color: var(--warm);
     font-size: 11px;
-    font
+    font-weight: 600;
 }
-/* Emails under the same date stay together */
+
 .email-row-group {
     overflow: hidden;
-
     border: 1px solid var(--line);
-    border-radius: 13px;
-
+    border-radius: 12px;
     background: #ffffff;
-    box-shadow:
-        0 7px 22px rgba(77, 59, 81, 0.05);
+    box-shadow: 0 7px 22px rgba(77, 59, 81, 0.05);
 }
-
-/* =========================
-   COMPACT EMAIL ROW
-========================= */
 
 .email-row {
     display: grid;
     grid-template-columns:
-        minmax(220px, 1.5fr)
-        minmax(110px, 0.7fr)
-        55px
+        minmax(260px, 1.5fr)
+        minmax(120px, 0.7fr)
+        50px
         auto;
-
-    gap: 10px;
     align-items: center;
-
-    min-height: 43px;
-    padding: 6px 11px;
-
+    gap: 10px;
+    min-height: 44px;
+    padding: 6px 10px;
     border-bottom: 1px solid #eee6ed;
-
     transition: background 0.15s ease;
 }
 
-.row-edit {
-    display: flex;
-    align-items: center;
-}
-    
 .email-row:last-child {
     border-bottom: 0;
 }
@@ -581,91 +602,84 @@ body.delete-mode #startDeleteButton {
 
 .row-email {
     min-width: 0;
-
     color: var(--text);
-
     font-size: 13px;
-    font-weight: 750;
-
+    font-weight: 700;
     overflow-wrap: anywhere;
 }
 
 .row-password {
     min-width: 0;
-
     color: #6f6472;
-
     font-size: 12px;
     font-weight: 600;
-
     overflow-wrap: anywhere;
 }
 
-.row-expiry {
-    color: var(--warm);
-
-    font-size: 11px;
-    font-weight: 750;
-
-    white-space: nowrap;
+.row-edit {
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 
 .row-actions {
     display: flex;
     align-items: center;
+    justify-content: flex-end;
     gap: 6px;
     flex-wrap: nowrap;
 }
 
-.row-actions .button-small {
+.row-actions .button,
+.row-edit .button {
+    width: auto;
     min-height: 28px;
-    padding: 0 9px;
+    padding: 0 8px;
     font-size: 10px;
+    white-space: nowrap;
 }
 
-/* =========================
-   DELETE MODE
-========================= */
+/* Delete mode */
 
 .selection-column {
-    display: none;
-}
-
-body.delete-mode .selection-column {
-    display: block;
+    display: none !important;
 }
 
 .parent-checkbox {
-    width: 17px;
-    min-height: 17px;
-    margin: 0;
-
+    width: 17px !important;
+    height: 17px !important;
+    min-height: 17px !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    border-radius: 3px;
     accent-color: var(--primary);
+}
+
+body.delete-mode .selection-column {
+    display: flex !important;
+    align-items: center;
+    justify-content: center;
 }
 
 body.delete-mode .email-row {
     grid-template-columns:
-        auto
-        minmax(220px, 1.5fr)
-        minmax(110px, 0.7fr)
-        minmax(125px, 0.65fr)
+        22px
+        minmax(260px, 1.5fr)
+        minmax(120px, 0.7fr)
+        50px
         auto;
 }
 
-/* =========================
-   REPLACEMENT ROW
-========================= */
+/* Replacement row */
 
 .replacement-email-row {
     grid-template-columns:
-        26px
-        minmax(190px, 1.5fr)
-        minmax(110px, 0.7fr)
-        minmax(125px, 0.65fr)
+        24px
+        minmax(236px, 1.5fr)
+        minmax(120px, 0.7fr)
+        50px
         auto;
-
-    padding-left: 17px;
-
+    padding-left: 16px;
     background: #faf7fa;
 }
 
@@ -680,27 +694,13 @@ body.delete-mode .email-row {
     text-align: center;
 }
 
-body.delete-mode .replacement-email-row {
-    grid-template-columns:
-        26px
-        minmax(190px, 1.5fr)
-        minmax(110px, 0.7fr)
-        minmax(125px, 0.65fr)
-        auto;
-}
-
-/* =========================
-   EMPTY STATE
-========================= */
+/* Empty state */
 
 .empty-state {
     padding: 55px 20px;
-
     border: 1px solid var(--line);
     border-radius: 18px;
-
     text-align: center;
-
     background: var(--surface);
 }
 
@@ -718,9 +718,7 @@ body.delete-mode .replacement-email-row {
     font-size: 36px;
 }
 
-/* =========================
-   ADD REPLACEMENT PAGE
-========================= */
+/* Add replacement */
 
 .search-row {
     display: grid;
@@ -739,15 +737,11 @@ body.delete-mode .replacement-email-row {
     align-items: center;
     justify-content: space-between;
     gap: 14px;
-
     padding: 12px 13px;
-
     color: var(--text);
     text-decoration: none;
-
     border: 1px solid var(--line);
     border-radius: 12px;
-
     background: #fdfafd;
 }
 
@@ -774,31 +768,24 @@ body.delete-mode .replacement-email-row {
 
 .empty-inline {
     padding: 14px;
-
     color: var(--muted);
-
     border: 1px dashed var(--line);
     border-radius: 12px;
-
     text-align: center;
 }
 
 .selected-parent {
     display: grid;
     gap: 4px;
-
     margin-top: 20px;
     padding: 14px;
-
     border: 1px solid #ddceda;
     border-radius: 14px;
-
     background: #f7f0f6;
 }
 
 .selected-parent > span {
     color: #927790;
-
     font-size: 11px;
     font-weight: 800;
     letter-spacing: 0.08em;
@@ -809,16 +796,12 @@ body.delete-mode .replacement-email-row {
     color: var(--muted);
 }
 
-/* =========================
-   ALERTS
-========================= */
+/* Alerts */
 
 .alert {
     margin-top: 17px;
     padding: 13px;
-
     border-radius: 12px;
-
     white-space: pre-line;
 }
 
@@ -834,21 +817,96 @@ body.delete-mode .replacement-email-row {
     font-size: 13px;
 }
 
-/* =========================
-   MODALS
-========================= */
+/* Find bar */
+
+.page-find-bar {
+    position: fixed;
+    top: 12px;
+    right: 12px;
+    z-index: 1200;
+    display: grid;
+    grid-template-columns:
+        minmax(220px, 1fr)
+        38px
+        38px
+        38px;
+    gap: 7px;
+    width: min(560px, calc(100% - 24px));
+    padding: 9px;
+    border: 1px solid var(--line);
+    border-radius: 13px;
+    background: rgba(255, 255, 255, 0.98);
+    box-shadow: 0 14px 35px rgba(77, 59, 81, 0.14);
+    backdrop-filter: blur(12px);
+}
+
+.page-find-bar[hidden] {
+    display: none;
+}
+
+.page-find-input-wrap {
+    position: relative;
+    min-width: 0;
+}
+
+.page-find-input-wrap input {
+    min-height: 38px;
+    padding-right: 82px;
+}
+
+.page-find-count {
+    position: absolute;
+    top: 50%;
+    right: 10px;
+    transform: translateY(-50%);
+    color: var(--muted);
+    font-size: 10px;
+    font-weight: 700;
+    pointer-events: none;
+}
+
+.page-find-button,
+.page-find-close {
+    width: 38px;
+    min-height: 38px;
+    padding: 0;
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    color: #695b6d;
+    background: #ffffff;
+    font-size: 16px;
+    font-weight: 800;
+}
+
+.page-find-button:hover,
+.page-find-close:hover {
+    background: #f8f2f7;
+}
+
+.email-row.find-hidden {
+    display: none;
+}
+
+.email-row.find-match {
+    background: #fff8d9;
+}
+
+.email-row.find-current {
+    outline: 2px solid var(--primary);
+    outline-offset: -2px;
+    background: #fff1c7;
+}
+
+/* Modals */
 
 .modal-backdrop {
     position: fixed;
     inset: 0;
     z-index: 1000;
-
     display: none;
     align-items: center;
     justify-content: center;
-
     padding: 20px;
-
     background: rgba(47, 39, 50, 0.36);
     backdrop-filter: blur(5px);
 }
@@ -860,12 +918,9 @@ body.delete-mode .replacement-email-row {
 .modal-card {
     width: min(430px, 100%);
     padding: 23px;
-
     border-radius: 18px;
-
     background: #ffffff;
-    box-shadow:
-        0 30px 80px rgba(53, 40, 56, 0.22);
+    box-shadow: 0 30px 80px rgba(53, 40, 56, 0.22);
 }
 
 .modal-card p {
@@ -878,9 +933,7 @@ body.delete-mode .replacement-email-row {
     margin-top: 20px;
 }
 
-/* =========================
-   TABLET
-========================= */
+/* Tablet */
 
 @media (max-width: 900px) {
     .admin-grid {
@@ -892,37 +945,38 @@ body.delete-mode .replacement-email-row {
         grid-template-columns: 1fr;
     }
 
+    .date-jump-nav {
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+    }
+
     .email-row {
         grid-template-columns:
             minmax(190px, 1.4fr)
             minmax(100px, 0.7fr)
-            minmax(110px, 0.7fr)
+            50px
             auto;
     }
 
     body.delete-mode .email-row {
         grid-template-columns:
-            auto
-            minmax(220px, 1.5fr)
-            minmax(110px, 0.7fr)
-            55px
+            22px
+            minmax(190px, 1.4fr)
+            minmax(100px, 0.7fr)
+            50px
             auto;
     }
 
-    .replacement-email-row,
-    body.delete-mode .replacement-email-row {
+    .replacement-email-row {
         grid-template-columns:
             24px
             minmax(170px, 1.4fr)
             minmax(100px, 0.7fr)
-            minmax(110px, 0.7fr)
+            50px
             auto;
     }
 }
 
-/* =========================
-   MOBILE
-========================= */
+/* Mobile */
 
 @media (max-width: 700px) {
     .admin-shell,
@@ -956,6 +1010,27 @@ body.delete-mode .replacement-email-row {
         padding: 19px;
     }
 
+    .date-jump-nav {
+        display: flex;
+        align-items: center;
+        max-height: none;
+        overflow-x: auto;
+        overflow-y: hidden;
+        padding: 9px;
+        touch-action: pan-x;
+    }
+
+    .date-jump-button {
+        flex: 0 0 auto;
+        min-height: 34px;
+        padding: 0 11px;
+    }
+
+    .date-jump-nav::-webkit-scrollbar {
+        width: auto;
+        height: 5px;
+    }
+
     .list-heading {
         align-items: flex-start;
     }
@@ -968,10 +1043,8 @@ body.delete-mode .replacement-email-row {
         grid-template-columns:
             minmax(0, 1fr)
             auto;
-
         gap: 3px 8px;
-
-        min-height: 52px;
+        min-height: 58px;
         padding: 7px 9px;
     }
 
@@ -987,259 +1060,6 @@ body.delete-mode .replacement-email-row {
         font-size: 11px;
     }
 
-    .row-expiry {
-        grid-column: 1;
-        grid-row: 3;
-        font-size: 10px;
-    }
-
-    .row-actions {
-        grid-column: 2;
-        grid-row: 1 / span 3;
-    }
-
-    .row-actions .button-small {
-        min-height: 27px;
-        padding: 0 7px;
-        font-size: 9px;
-    }
-
-    body.delete-mode .email-row {
-        grid-template-columns:
-            auto
-            minmax(0, 1fr)
-            auto;
-    }
-
-    body.delete-mode .selection-column {
-        grid-column: 1;
-        grid-row: 1 / span 3;
-    }
-
-    body.delete-mode .row-email,
-    body.delete-mode .row-password,
-    body.delete-mode .row-expiry {
-        grid-column: 2;
-    }
-
-    body.delete-mode .row-actions {
-        grid-column: 3;
-    }
-
-    .replacement-email-row {
-        grid-template-columns:
-            20px
-            minmax(0, 1fr)
-            auto;
-
-        padding-left: 6px;
-    }
-
-    .replacement-email-row .replacement-indent {
-        grid-column: 1;
-        grid-row: 1 / span 3;
-    }
-
-    .replacement-email-row .row-email,
-    .replacement-email-row .row-password,
-    .replacement-email-row .row-expiry {
-        grid-column: 2;
-    }
-
-    .replacement-email-row .row-actions {
-        grid-column: 3;
-    }
-
-    body.delete-mode .replacement-email-row {
-        grid-template-columns:
-            20px
-            minmax(0, 1fr)
-            auto;
-    }
-
-    .search-row {
-        grid-template-columns: 1fr;
-    }
-
-    .search-result {
-        align-items: flex-start;
-        flex-direction: column;
-    }
-
-    .search-result > span {
-        text-align: left;
-    }
-
-    .form-actions {
-        width: 100%;
-    }
-
-    .form-actions .button {
-        flex: 1;
-    }
-}
-
-/* =========================
-   FIX COMPACT EMAIL ROWS
-========================= */
-
-.email-date-heading {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    margin-bottom: 6px;
-}
-
-.email-date-title {
-    margin: 0;
-    font-size: 14px;
-    font-weight: 800;
-}
-
-.email-date-expiry {
-    color: #80654e;
-    font-size: 11px;
-    font-weight: 600;
-}
-
-.email-row-group {
-    overflow: hidden;
-    border: 1px solid var(--line);
-    border-radius: 12px;
-    background: #ffffff;
-}
-
-.email-row {
-    display: grid;
-    grid-template-columns:
-        minmax(260px, 1.5fr)
-        minmax(120px, 0.7fr)
-        50px
-        auto;
-
-    align-items: center;
-    gap: 10px;
-
-    min-height: 44px;
-    padding: 6px 10px;
-
-    border-bottom: 1px solid #eee6ed;
-}
-
-.email-row:last-child {
-    border-bottom: 0;
-}
-
-.row-email {
-    min-width: 0;
-    font-size: 13px;
-    font-weight: 700;
-    overflow-wrap: anywhere;
-}
-
-.row-password {
-    min-width: 0;
-    color: #6f6472;
-    font-size: 12px;
-    overflow-wrap: anywhere;
-}
-
-.row-edit {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-}
-
-.row-actions {
-    display: flex;
-    align-items: center;
-    justify-content: flex-end;
-    gap: 6px;
-    flex-wrap: nowrap;
-}
-
-.row-actions .button,
-.row-edit .button {
-    width: auto;
-    min-height: 28px;
-    padding: 0 8px;
-    font-size: 10px;
-    white-space: nowrap;
-}
-
-/* Hide delete checkbox normally */
-.selection-column {
-    display: none !important;
-}
-
-/* Stop checkbox from inheriting full-width input styles */
-.parent-checkbox {
-    width: 17px !important;
-    height: 17px !important;
-    min-height: 17px !important;
-    padding: 0 !important;
-    margin: 0 !important;
-    border-radius: 3px;
-    accent-color: var(--primary);
-}
-
-/* Show checkbox only in delete mode */
-body.delete-mode .selection-column {
-    display: flex !important;
-    align-items: center;
-    justify-content: center;
-}
-
-body.delete-mode .email-row {
-    grid-template-columns:
-        22px
-        minmax(260px, 1.5fr)
-        minmax(120px, 0.7fr)
-        50px
-        auto;
-}
-
-/* Replacement row */
-.replacement-email-row {
-    grid-template-columns:
-        24px
-        minmax(236px, 1.5fr)
-        minmax(120px, 0.7fr)
-        50px
-        auto;
-
-    padding-left: 16px;
-    background: #faf7fa;
-}
-
-.replacement-indent {
-    color: #a2879f;
-    font-size: 16px;
-    text-align: center;
-}
-
-/* Mobile */
-@media (max-width: 700px) {
-    .email-row {
-        grid-template-columns:
-            minmax(0, 1fr)
-            auto;
-
-        gap: 3px 8px;
-        min-height: 58px;
-        padding: 7px 9px;
-    }
-
-    .row-email {
-        grid-column: 1;
-        grid-row: 1;
-    }
-
-    .row-password {
-        grid-column: 1;
-        grid-row: 2;
-    }
-
     .row-edit {
         grid-column: 2;
         grid-row: 1;
@@ -1249,6 +1069,13 @@ body.delete-mode .email-row {
     .row-actions {
         grid-column: 2;
         grid-row: 2;
+    }
+
+    .row-actions .button,
+    .row-edit .button {
+        min-height: 27px;
+        padding: 0 7px;
+        font-size: 9px;
     }
 
     body.delete-mode .email-row {
@@ -1278,7 +1105,6 @@ body.delete-mode .email-row {
             20px
             minmax(0, 1fr)
             auto;
-
         padding-left: 6px;
     }
 
@@ -1296,236 +1122,37 @@ body.delete-mode .email-row {
     .replacement-email-row .row-actions {
         grid-column: 3;
     }
-}
 
-/* =========================
-   DATE JUMP NAVIGATION
-========================= */
-
-.date-jump-nav {
-    display: grid;
-    grid-template-columns:
-        repeat(5, minmax(0, 1fr));
-
-    gap: 8px;
-
-    width: 100%;
-    max-height: 145px;
-
-    margin-bottom: 14px;
-    padding: 10px;
-
-    overflow-x: hidden;
-    overflow-y: auto;
-
-    border: 1px solid var(--line);
-    border-radius: 14px;
-
-    background: rgba(255, 255, 255, 0.94);
-
-    backdrop-filter: blur(12px);
-    box-shadow: var(--shadow);
-
-    scrollbar-width: thin;
-    scrollbar-color: #cdbdca transparent;
-
-    /* Allow the main page to continue scrolling */
-    overscroll-behavior: auto;
-}
-
-.date-jump-button {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-
-    min-width: 0;
-    min-height: 35px;
-    padding: 0 10px;
-
-    color: #746777;
-    text-decoration: none;
-
-    border: 1px solid var(--line);
-    border-radius: 10px;
-
-    background: #ffffff;
-
-    font-size: 11px;
-    font-weight: 800;
-
-    white-space: nowrap;
-
-    transition:
-        color 0.16s ease,
-        border-color 0.16s ease,
-        background 0.16s ease;
-}
-
-.date-jump-button:hover {
-    color: var(--primary-dark);
-    border-color: #cbb7c8;
-    background: #f8f1f7;
-}
-
-.date-jump-button.active {
-    color: #ffffff;
-    border-color: var(--primary);
-    background: var(--primary);
-}
-
-.date-jump-nav::-webkit-scrollbar {
-    width: 6px;
-}
-
-.date-jump-nav::-webkit-scrollbar-track {
-    background: transparent;
-}
-
-.date-jump-nav::-webkit-scrollbar-thumb {
-    border-radius: 999px;
-    background: #cdbdca;
-}
-
-.email-date-group {
-    scroll-margin-top: 20px;
-}
-/* Prevent sticky navigation from covering date title */
-.email-date-group {
-    scroll-margin-top: 70px;
-}
-
-@media (max-width: 700px) {
-    .date-jump-nav {
-        display: flex;
-        align-items: center;
-
-        max-height: none;
-
-        overflow-x: auto;
-        overflow-y: hidden;
-
-        padding: 9px;
+    .search-row {
+        grid-template-columns: 1fr;
     }
 
-    .date-jump-button {
-        flex: 0 0 auto;
-        min-height: 34px;
-        padding: 0 11px;
+    .search-result {
+        align-items: flex-start;
+        flex-direction: column;
     }
 
-    .date-jump-nav::-webkit-scrollbar {
-        width: auto;
-        height: 5px;
+    .search-result > span {
+        text-align: left;
     }
-}
 
-/* =========================
-   IN-PAGE FIND BAR
-========================= */
+    .form-actions {
+        width: 100%;
+    }
 
-.page-find-bar {
-    position: sticky;
-    top: 10px;
-    z-index: 100;
+    .form-actions .button {
+        flex: 1;
+    }
 
-    display: grid;
-    grid-template-columns:
-        minmax(220px, 1fr)
-        38px
-        38px
-        38px;
-
-    gap: 7px;
-
-    width: min(560px, 100%);
-    margin: 0 0 14px auto;
-    padding: 9px;
-
-    border: 1px solid var(--line);
-    border-radius: 13px;
-
-    background: rgba(255, 255, 255, 0.97);
-
-    box-shadow:
-        0 14px 35px rgba(77, 59, 81, 0.14);
-
-    backdrop-filter: blur(12px);
-}
-
-.page-find-bar[hidden] {
-    display: none;
-}
-
-.page-find-input-wrap {
-    position: relative;
-    min-width: 0;
-}
-
-.page-find-input-wrap input {
-    min-height: 38px;
-    padding-right: 82px;
-}
-
-.page-find-count {
-    position: absolute;
-    top: 50%;
-    right: 10px;
-
-    transform: translateY(-50%);
-
-    color: var(--muted);
-
-    font-size: 10px;
-    font-weight: 700;
-
-    pointer-events: none;
-}
-
-.page-find-button,
-.page-find-close {
-    width: 38px;
-    min-height: 38px;
-    padding: 0;
-
-    border: 1px solid var(--line);
-    border-radius: 10px;
-
-    color: #695b6d;
-    background: #ffffff;
-
-    font-size: 16px;
-    font-weight: 800;
-}
-
-.page-find-button:hover,
-.page-find-close:hover {
-    background: #f8f2f7;
-}
-
-.email-row.find-hidden {
-    display: none;
-}
-
-.email-row.find-match {
-    background: #fff8d9;
-}
-
-.email-row.find-current {
-    outline: 2px solid var(--primary);
-    outline-offset: -2px;
-    background: #fff1c7;
-}
-
-@media (max-width: 700px) {
     .page-find-bar {
+        top: 6px;
+        right: 6px;
         grid-template-columns:
             minmax(0, 1fr)
             36px
             36px
             36px;
-
-        width: 100%;
-        top: 6px;
+        width: calc(100% - 12px);
     }
 
     .page-find-button,
@@ -1533,39 +1160,4 @@ body.delete-mode .email-row {
         width: 36px;
         min-height: 36px;
     }
-}
-
-html {
-    overflow-y: auto !important;
-}
-
-body {
-    overflow-x: hidden !important;
-    overflow-y: auto !important;
-}
-
-.email-shell {
-    overflow: visible !important;
-}
-
-.date-jump-nav {
-    overscroll-behavior: auto !important;
-}
-
-/* Fix full-page scrolling */
-
-html,
-body {
-    min-height: 100%;
-    overflow-x: hidden;
-    overflow-y: auto;
-}
-
-.email-shell {
-    overflow: visible;
-}
-
-.date-jump-nav {
-    position: static;
-    overscroll-behavior: auto;
 }
