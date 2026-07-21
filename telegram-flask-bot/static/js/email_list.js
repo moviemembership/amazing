@@ -142,7 +142,11 @@ const noticeMessages = {
     replacement_added: [
         "Replacement added",
         "The replacement account was attached successfully."
-    ]
+    ],
+    email_updated: [
+    "Email updated",
+    "The email account was updated successfully."
+],
 };
 
 if (
