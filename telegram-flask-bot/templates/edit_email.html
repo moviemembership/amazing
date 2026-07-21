@@ -1,0 +1,94 @@
+{% extends "base.html" %}
+
+{% block title %}Edit Email{% endblock %}
+{% block body_class %}email-manager-page{% endblock %}
+
+{% block content %}
+<main class="narrow-shell">
+
+    <section class="panel soft-panel">
+
+        <span class="eyebrow">
+            Account Library
+        </span>
+
+        <h1>
+            Edit Email
+        </h1>
+
+        <p class="muted">
+            {% if account.parent_id %}
+                Editing replacement account
+            {% else %}
+                Editing parent account
+            {% endif %}
+        </p>
+
+        {% if error_message %}
+            <div class="alert alert-error">
+                {{ error_message }}
+            </div>
+        {% endif %}
+
+        <form
+            method="POST"
+            class="form-stack form-space"
+        >
+
+            <label>
+                Email
+
+                <input
+                    type="email"
+                    name="email"
+                    value="{{ account.email }}"
+                    required
+                >
+            </label>
+
+            <label>
+                Password
+
+                <input
+                    type="text"
+                    name="password"
+                    value="{{ account.password }}"
+                    required
+                >
+            </label>
+
+            <label>
+                Expiry Date
+
+                <input
+                    type="date"
+                    name="expiry_date"
+                    value="{{ account.expiry_date }}"
+                    required
+                >
+            </label>
+
+            <div class="form-actions">
+
+                <a
+                    class="button button-secondary"
+                    href="{{ url_for('email_list') }}"
+                >
+                    Back
+                </a>
+
+                <button
+                    class="button"
+                    type="submit"
+                >
+                    Save Changes
+                </button>
+
+            </div>
+
+        </form>
+
+    </section>
+
+</main>
+{% endblock %}
