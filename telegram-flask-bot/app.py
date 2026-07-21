@@ -795,6 +795,7 @@ def edit_order():
 def email_list():
     notice = request.args.get("notice", "")
     search = request.args.get("search", "").strip()
+    selected_date = request.args.get("date", "").strip()
     sort = request.args.get("sort", "latest")
 
     if sort not in {"latest", "oldest"}:
@@ -846,6 +847,20 @@ def email_list():
         WHERE p.parent_id IS NULL
     """
     params = []
+
+    if selected_date:
+        try:
+            parsed_date = datetime.strptime(
+                selected_date,
+                "%Y-%m-%d"
+            ).date()
+        except ValueError:
+            selected_date = ""
+        else:
+            query += """
+                AND DATE(p.created_at) = %s
+            """
+            params.append(parsed_date)
 
     if search:
         term = f"%{search}%"
@@ -943,6 +958,7 @@ def email_list():
         total_parents=total_parents,
         total_replacements=total_replacements,
         search=search,
+        selected_date=selected_date,
         sort=sort,
         notice=notice
     )
