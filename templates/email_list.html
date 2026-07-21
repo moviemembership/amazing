@@ -1,0 +1,290 @@
+{% extends "base.html" %}
+
+{% block title %}Email Management{% endblock %}
+{% block body_class %}email-manager-page{% endblock %}
+
+{% block content %}
+<main class="email-shell">
+    <header class="page-header email-header">
+        <div>
+            <span class="eyebrow">Account Library</span>
+            <h1>Email Management</h1>
+            <p>
+                Manage parent accounts and replacement accounts
+                together in one list.
+            </p>
+        </div>
+
+        <div class="header-actions">
+            <a
+                class="button button-secondary"
+                href="{{ url_for('add_replacement') }}"
+            >
+                + Add Replacement
+            </a>
+
+            <a
+                class="button"
+                href="{{ url_for('bulk_add_email') }}"
+            >
+                + Bulk Add Email
+            </a>
+        </div>
+    </header>
+
+    <section class="stats-grid">
+        <article class="stat-card">
+            <span>Parent emails</span>
+            <strong>{{ total_parents }}</strong>
+        </article>
+
+        <article class="stat-card">
+            <span>Replacement emails</span>
+            <strong>{{ total_replacements }}</strong>
+        </article>
+    </section>
+
+    <form method="GET" class="email-toolbar">
+        <input
+            type="text"
+            name="search"
+            placeholder="Search email, password or ID"
+            value="{{ search }}"
+        >
+
+        <select name="sort">
+            <option
+                value="latest"
+                {% if sort == "latest" %}selected{% endif %}
+            >
+                Latest to oldest
+            </option>
+
+            <option
+                value="oldest"
+                {% if sort == "oldest" %}selected{% endif %}
+            >
+                Oldest to latest
+            </option>
+        </select>
+
+        <button class="button" type="submit">
+            Search
+        </button>
+
+        {% if search %}
+            <a
+                class="button button-secondary"
+                href="{{ url_for('email_list') }}"
+            >
+                Clear
+            </a>
+        {% endif %}
+    </form>
+
+    <form id="deleteForm" method="POST">
+        <div class="list-heading">
+            <h2>Email List</h2>
+
+            <button
+                id="startDeleteButton"
+                class="button button-danger-soft"
+                type="button"
+            >
+                Delete
+            </button>
+
+            <div id="deleteControls" class="delete-controls">
+                <button
+                    id="cancelDeleteButton"
+                    class="button button-secondary"
+                    type="button"
+                >
+                    Cancel
+                </button>
+
+                <button
+                    id="prepareDeleteButton"
+                    class="button button-danger"
+                    type="button"
+                >
+                    Delete Selected
+                </button>
+            </div>
+        </div>
+
+        <section class="email-card-list">
+            {% for parent in parents %}
+                <article class="email-card">
+                    <div class="parent-row">
+                        <div class="selection-column">
+                            <input
+                                class="parent-checkbox"
+                                type="checkbox"
+                                name="selected_ids"
+                                value="{{ parent.id }}"
+                            >
+                        </div>
+
+                        <div class="account-main">
+                            <div class="account-meta">
+                                <span class="badge badge-neutral">
+                                    #{{ parent.id }}
+                                </span>
+
+                                <span class="badge badge-warm">
+                                    Expires {{ parent.expiry_date }}
+                                </span>
+                            </div>
+
+                            <h3>{{ parent.email }}</h3>
+
+                            <div class="password-line">
+                                <span>Password</span>
+                                <strong>{{ parent.password }}</strong>
+                            </div>
+
+                            <small>
+                                Added {{ parent.created_at }}
+                            </small>
+                        </div>
+
+                        <div class="account-actions">
+                            <button
+                                class="button button-small button-soft"
+                                type="button"
+                                data-email-id="{{ parent.id }}"
+                            >
+                                ID Baru
+                            </button>
+
+                            <button
+                                class="button button-small button-warm"
+                                type="button"
+                                data-email-id="{{ parent.id }}"
+                            >
+                                ID Backup
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="replacement-area">
+                        {% for replacement in parent.replacements %}
+                            <div class="replacement-row">
+                                <div class="replacement-marker"></div>
+
+                                <div class="replacement-card">
+                                    <span class="replacement-title">
+                                        Replacement account
+                                    </span>
+
+                                    <div class="replacement-grid">
+                                        <div>
+                                            <small>ID</small>
+                                            <strong>#{{ replacement.id }}</strong>
+                                        </div>
+
+                                        <div>
+                                            <small>Email</small>
+                                            <strong>{{ replacement.email }}</strong>
+                                        </div>
+
+                                        <div>
+                                            <small>Password</small>
+                                            <strong>{{ replacement.password }}</strong>
+                                        </div>
+
+                                        <div>
+                                            <small>Expiry</small>
+                                            <strong>{{ replacement.expiry_date }}</strong>
+                                        </div>
+                                    </div>
+
+                                    <div class="account-actions replacement-actions">
+                                        <button
+                                            class="button button-small button-soft"
+                                            type="button"
+                                            data-email-id="{{ replacement.id }}"
+                                        >
+                                            ID Baru
+                                        </button>
+
+                                        <button
+                                            class="button button-small button-warm"
+                                            type="button"
+                                            data-email-id="{{ replacement.id }}"
+                                        >
+                                            ID Backup
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        {% else %}
+                            <div class="no-replacement">
+                                No replacement accounts
+                            </div>
+                        {% endfor %}
+                    </div>
+                </article>
+            {% else %}
+                <div class="empty-state">
+                    <div class="empty-icon">✉</div>
+                    <h3>No email records found</h3>
+                    <p>Add new parent emails or change your search.</p>
+                </div>
+            {% endfor %}
+        </section>
+    </form>
+</main>
+
+<div class="modal-backdrop" id="noticeModal">
+    <div class="modal-card">
+        <h3 id="noticeTitle">Notice</h3>
+        <p id="noticeMessage"></p>
+
+        <div class="modal-actions">
+            <button
+                class="button"
+                type="button"
+                id="closeNoticeButton"
+            >
+                OK
+            </button>
+        </div>
+    </div>
+</div>
+
+<div class="modal-backdrop" id="confirmModal">
+    <div class="modal-card">
+        <h3>Confirm deletion</h3>
+        <p id="confirmDeleteMessage"></p>
+
+        <div class="modal-actions">
+            <button
+                class="button button-secondary"
+                type="button"
+                id="cancelConfirmButton"
+            >
+                Cancel
+            </button>
+
+            <button
+                class="button button-danger"
+                type="button"
+                id="confirmDeleteButton"
+            >
+                Delete
+            </button>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+window.EMAIL_NOTICE = {{ notice|tojson }};
+</script>
+<script
+    src="{{ url_for('static', filename='js/email_list.js') }}"
+></script>
+{% endblock %}
