@@ -71,7 +71,14 @@
             placeholder="Search email, password or ID"
             value="{{ search }}"
         >
-
+    
+        <input
+            type="date"
+            name="date"
+            value="{{ selected_date }}"
+            aria-label="Filter by date"
+        >
+    
         <select name="sort">
             <option
                 value="latest"
@@ -79,7 +86,7 @@
             >
                 Latest to oldest
             </option>
-
+    
             <option
                 value="oldest"
                 {% if sort == "oldest" %}selected{% endif %}
@@ -87,15 +94,15 @@
                 Oldest to latest
             </option>
         </select>
-
+    
         <button
             class="button"
             type="submit"
         >
             Search
         </button>
-
-        {% if search %}
+    
+        {% if search or selected_date %}
             <a
                 class="button button-secondary"
                 href="{{ url_for('email_list') }}"
