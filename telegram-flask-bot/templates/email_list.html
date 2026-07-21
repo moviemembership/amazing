@@ -39,27 +39,19 @@
         </div>
     </header>
 
-    <section class="stats-grid">
-        <article class="stat-card">
-            <span>
-                Parent emails
-            </span>
-
-            <strong>
-                {{ total_parents }}
-            </strong>
-        </article>
-
-        <article class="stat-card">
-            <span>
-                Replacement emails
-            </span>
-
-            <strong>
-                {{ total_replacements }}
-            </strong>
-        </article>
-    </section>
+    <nav
+        class="date-jump-nav"
+        aria-label="Jump to email date"
+    >
+        {% for account_date in available_dates %}
+            <a
+                class="date-jump-button"
+                href="#date-{{ account_date }}"
+            >
+                {{ account_date }}
+            </a>
+        {% endfor %}
+    </nav>
 
     <form
         method="GET"
@@ -155,7 +147,10 @@
 
             {% for created_date, date_parents in parents_by_date.items() %}
 
-                <div class="email-date-group">
+                <div
+                    class="email-date-group"
+                    id="date-{{ created_date }}"
+                >
 
                     <div class="email-date-heading">
                         <h3 class="email-date-title">
