@@ -4,6 +4,52 @@
 {% block body_class %}email-manager-page{% endblock %}
 
 {% block content %}
+<div
+    id="pageFindBar"
+    class="page-find-bar"
+    hidden
+>
+    <div class="page-find-input-wrap">
+        <input
+            id="pageFindInput"
+            type="text"
+            placeholder="Find email or password"
+            autocomplete="off"
+        >
+
+        <span id="pageFindCount" class="page-find-count">
+            0 results
+        </span>
+    </div>
+
+    <button
+        id="pageFindPrevious"
+        class="page-find-button"
+        type="button"
+        aria-label="Previous result"
+    >
+        ↑
+    </button>
+
+    <button
+        id="pageFindNext"
+        class="page-find-button"
+        type="button"
+        aria-label="Next result"
+    >
+        ↓
+    </button>
+
+    <button
+        id="pageFindClose"
+        class="page-find-close"
+        type="button"
+        aria-label="Close find"
+    >
+        ×
+    </button>
+</div>
+
 <main class="email-shell">
 
     <header class="page-header email-header">
