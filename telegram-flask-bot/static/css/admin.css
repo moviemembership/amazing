@@ -443,23 +443,36 @@ th {
 /* Date navigation */
 
 .date-jump-nav {
+    position: sticky;
+    top: 0;
+    z-index: 80;
+
     display: grid;
-    grid-template-columns: repeat(5, minmax(0, 1fr));
+    grid-template-columns:
+        repeat(5, minmax(0, 1fr));
+
     gap: 8px;
+
     width: 100%;
     max-height: 145px;
+
     margin-bottom: 14px;
     padding: 10px;
+
     overflow-x: hidden;
     overflow-y: auto;
-    position: static;
+
     border: 1px solid var(--line);
     border-radius: 14px;
-    background: rgba(255, 255, 255, 0.94);
+
+    background: rgba(255, 255, 255, 0.97);
+
     backdrop-filter: blur(12px);
     box-shadow: var(--shadow);
+
     scrollbar-width: thin;
     scrollbar-color: #cdbdca transparent;
+
     overscroll-behavior: auto;
     touch-action: pan-y;
 }
@@ -545,7 +558,7 @@ body.delete-mode #startDeleteButton {
 .email-date-group {
     display: grid;
     gap: 6px;
-    scroll-margin-top: 20px;
+    scroll-margin-top: 165px;
 }
 
 .email-date-heading {
