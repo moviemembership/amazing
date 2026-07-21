@@ -276,12 +276,6 @@ if (
                     activeButton.classList.add(
                         "active"
                     );
-
-                    activeButton.scrollIntoView({
-                        behavior: "smooth",
-                        inline: "center",
-                        block: "nearest"
-                    });
                 }
             });
         },
