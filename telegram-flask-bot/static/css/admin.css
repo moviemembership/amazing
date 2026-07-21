@@ -528,7 +528,7 @@ body.delete-mode #startDeleteButton {
     color: #80654e;
     font-size: 11px;
     font
-
+}
 /* Emails under the same date stay together */
 .email-row-group {
     overflow: hidden;
