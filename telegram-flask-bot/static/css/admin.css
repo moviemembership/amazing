@@ -1305,12 +1305,12 @@ body.delete-mode .email-row {
 .date-jump-nav {
     display: grid;
     grid-template-columns:
-        repeat(10, minmax(0, 1fr));
+        repeat(5, minmax(0, 1fr));
 
     gap: 8px;
 
     width: 100%;
-    max-height: 152px;
+    max-height: 145px;
 
     margin-bottom: 14px;
     padding: 10px;
@@ -1329,7 +1329,8 @@ body.delete-mode .email-row {
     scrollbar-width: thin;
     scrollbar-color: #cdbdca transparent;
 
-    overscroll-behavior: contain;
+    /* Allow the main page to continue scrolling */
+    overscroll-behavior: auto;
 }
 
 .date-jump-button {
@@ -1532,4 +1533,39 @@ body.delete-mode .email-row {
         width: 36px;
         min-height: 36px;
     }
+}
+
+html {
+    overflow-y: auto !important;
+}
+
+body {
+    overflow-x: hidden !important;
+    overflow-y: auto !important;
+}
+
+.email-shell {
+    overflow: visible !important;
+}
+
+.date-jump-nav {
+    overscroll-behavior: auto !important;
+}
+
+/* Fix full-page scrolling */
+
+html,
+body {
+    min-height: 100%;
+    overflow-x: hidden;
+    overflow-y: auto;
+}
+
+.email-shell {
+    overflow: visible;
+}
+
+.date-jump-nav {
+    position: static;
+    overscroll-behavior: auto;
 }
