@@ -119,9 +119,17 @@
 
         <div class="email-date-group">
 
-            <h3 class="email-date-title">
-                {{ created_date }}
-            </h3>
+            <div class="email-date-heading">
+                <h3 class="email-date-title">
+                    {{ created_date }}
+                </h3>
+            
+                {% if date_parents %}
+                    <span class="email-date-expiry">
+                        Expires {{ date_parents[0].expiry_date }}
+                    </span>
+                {% endif %}
+            </div>
 
             <div class="email-row-group">
 
@@ -146,8 +154,13 @@
                             {{ parent.password }}
                         </div>
 
-                        <div class="row-expiry">
-                            Expires {{ parent.expiry_date }}
+                        <div class="row-edit">
+                            <a
+                                class="button button-small button-secondary"
+                                href="{{ url_for('edit_email', email_id=parent.id) }}"
+                            >
+                                Edit
+                            </a>
                         </div>
 
                         <div class="row-actions">
@@ -188,28 +201,37 @@
                                 {{ replacement.password }}
                             </div>
 
-                            <div class="row-expiry">
-                                Expires {{ replacement.expiry_date }}
+                            <div class="row-edit">
+                                <a
+                                    class="button button-small button-secondary"
+                                    href="{{ url_for('edit_email', email_id=replacement.id) }}"
+                                >
+                                    Edit
+                                </a>
                             </div>
 
                             <div class="row-actions">
 
                                 <button
-                                    class="button button-small button-soft"
+                                    class="button button-small button-soft copy-email-button"
                                     type="button"
-                                    data-email-id="{{ replacement.id }}"
+                                    data-copy-type="ID Baru"
+                                    data-email="{{ replacement.email }}"
+                                    data-password="{{ replacement.password }}"
                                 >
                                     ID Baru
                                 </button>
-
+                            
                                 <button
-                                    class="button button-small button-warm"
+                                    class="button button-small button-warm copy-email-button"
                                     type="button"
-                                    data-email-id="{{ replacement.id }}"
+                                    data-copy-type="ID Backup"
+                                    data-email="{{ replacement.email }}"
+                                    data-password="{{ replacement.password }}"
                                 >
                                     ID Backup
                                 </button>
-
+                            
                             </div>
 
                         </div>
