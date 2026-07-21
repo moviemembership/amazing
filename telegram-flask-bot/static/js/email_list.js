@@ -336,7 +336,6 @@ function openFindBar() {
 function clearFindState() {
     getEmailRows().forEach(function (row) {
         row.classList.remove(
-            "find-hidden",
             "find-match",
             "find-current"
         );
@@ -404,7 +403,6 @@ function runPageFind() {
 
     rows.forEach(function (row) {
         row.classList.remove(
-            "find-hidden",
             "find-match",
             "find-current"
         );
@@ -419,8 +417,6 @@ function runPageFind() {
         if (rowText.includes(query)) {
             row.classList.add("find-match");
             pageFindMatches.push(row);
-        } else {
-            row.classList.add("find-hidden");
         }
     });
 
