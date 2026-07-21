@@ -1076,3 +1076,222 @@ body.delete-mode .replacement-email-row {
         flex: 1;
     }
 }
+
+/* =========================
+   FIX COMPACT EMAIL ROWS
+========================= */
+
+.email-date-heading {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 6px;
+}
+
+.email-date-title {
+    margin: 0;
+    font-size: 14px;
+    font-weight: 800;
+}
+
+.email-date-expiry {
+    color: #80654e;
+    font-size: 11px;
+    font-weight: 600;
+}
+
+.email-row-group {
+    overflow: hidden;
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    background: #ffffff;
+}
+
+.email-row {
+    display: grid;
+    grid-template-columns:
+        minmax(260px, 1.5fr)
+        minmax(120px, 0.7fr)
+        50px
+        auto;
+
+    align-items: center;
+    gap: 10px;
+
+    min-height: 44px;
+    padding: 6px 10px;
+
+    border-bottom: 1px solid #eee6ed;
+}
+
+.email-row:last-child {
+    border-bottom: 0;
+}
+
+.row-email {
+    min-width: 0;
+    font-size: 13px;
+    font-weight: 700;
+    overflow-wrap: anywhere;
+}
+
+.row-password {
+    min-width: 0;
+    color: #6f6472;
+    font-size: 12px;
+    overflow-wrap: anywhere;
+}
+
+.row-edit {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.row-actions {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 6px;
+    flex-wrap: nowrap;
+}
+
+.row-actions .button,
+.row-edit .button {
+    width: auto;
+    min-height: 28px;
+    padding: 0 8px;
+    font-size: 10px;
+    white-space: nowrap;
+}
+
+/* Hide delete checkbox normally */
+.selection-column {
+    display: none !important;
+}
+
+/* Stop checkbox from inheriting full-width input styles */
+.parent-checkbox {
+    width: 17px !important;
+    height: 17px !important;
+    min-height: 17px !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    border-radius: 3px;
+    accent-color: var(--primary);
+}
+
+/* Show checkbox only in delete mode */
+body.delete-mode .selection-column {
+    display: flex !important;
+    align-items: center;
+    justify-content: center;
+}
+
+body.delete-mode .email-row {
+    grid-template-columns:
+        22px
+        minmax(260px, 1.5fr)
+        minmax(120px, 0.7fr)
+        50px
+        auto;
+}
+
+/* Replacement row */
+.replacement-email-row {
+    grid-template-columns:
+        24px
+        minmax(236px, 1.5fr)
+        minmax(120px, 0.7fr)
+        50px
+        auto;
+
+    padding-left: 16px;
+    background: #faf7fa;
+}
+
+.replacement-indent {
+    color: #a2879f;
+    font-size: 16px;
+    text-align: center;
+}
+
+/* Mobile */
+@media (max-width: 700px) {
+    .email-row {
+        grid-template-columns:
+            minmax(0, 1fr)
+            auto;
+
+        gap: 3px 8px;
+        min-height: 58px;
+        padding: 7px 9px;
+    }
+
+    .row-email {
+        grid-column: 1;
+        grid-row: 1;
+    }
+
+    .row-password {
+        grid-column: 1;
+        grid-row: 2;
+    }
+
+    .row-edit {
+        grid-column: 2;
+        grid-row: 1;
+        justify-content: flex-end;
+    }
+
+    .row-actions {
+        grid-column: 2;
+        grid-row: 2;
+    }
+
+    body.delete-mode .email-row {
+        grid-template-columns:
+            22px
+            minmax(0, 1fr)
+            auto;
+    }
+
+    body.delete-mode .selection-column {
+        grid-column: 1;
+        grid-row: 1 / span 2;
+    }
+
+    body.delete-mode .row-email,
+    body.delete-mode .row-password {
+        grid-column: 2;
+    }
+
+    body.delete-mode .row-edit,
+    body.delete-mode .row-actions {
+        grid-column: 3;
+    }
+
+    .replacement-email-row {
+        grid-template-columns:
+            20px
+            minmax(0, 1fr)
+            auto;
+
+        padding-left: 6px;
+    }
+
+    .replacement-email-row .replacement-indent {
+        grid-column: 1;
+        grid-row: 1 / span 2;
+    }
+
+    .replacement-email-row .row-email,
+    .replacement-email-row .row-password {
+        grid-column: 2;
+    }
+
+    .replacement-email-row .row-edit,
+    .replacement-email-row .row-actions {
+        grid-column: 3;
+    }
+}
