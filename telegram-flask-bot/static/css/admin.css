@@ -1297,3 +1297,86 @@ body.delete-mode .email-row {
         grid-column: 3;
     }
 }
+
+/* =========================
+   DATE JUMP NAVIGATION
+========================= */
+
+.date-jump-nav {
+    position: sticky;
+    top: 0;
+    z-index: 50;
+
+    display: flex;
+    align-items: center;
+    gap: 8px;
+
+    width: 100%;
+    margin-bottom: 14px;
+    padding: 10px;
+
+    overflow-x: auto;
+
+    border: 1px solid var(--line);
+    border-radius: 14px;
+
+    background: rgba(255, 255, 255, 0.94);
+
+    backdrop-filter: blur(12px);
+    box-shadow: var(--shadow);
+
+    scrollbar-width: thin;
+}
+
+.date-jump-button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+
+    flex: 0 0 auto;
+
+    min-height: 34px;
+    padding: 0 12px;
+
+    color: #746777;
+    text-decoration: none;
+
+    border: 1px solid var(--line);
+    border-radius: 10px;
+
+    background: #ffffff;
+
+    font-size: 11px;
+    font-weight: 800;
+
+    transition:
+        color 0.16s ease,
+        border-color 0.16s ease,
+        background 0.16s ease;
+}
+
+.date-jump-button:hover {
+    color: var(--primary-dark);
+    border-color: #cbb7c8;
+    background: #f8f1f7;
+}
+
+.date-jump-button.active {
+    color: #ffffff;
+    border-color: var(--primary);
+    background: var(--primary);
+}
+
+.date-jump-nav::-webkit-scrollbar {
+    height: 5px;
+}
+
+.date-jump-nav::-webkit-scrollbar-thumb {
+    border-radius: 999px;
+    background: #d8cad5;
+}
+
+/* Prevent sticky navigation from covering date title */
+.email-date-group {
+    scroll-margin-top: 70px;
+}
