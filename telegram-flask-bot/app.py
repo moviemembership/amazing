@@ -467,11 +467,11 @@ def parse_bulk_email_lines(text):
         if not line:
             continue
 
-        parts = line.split("---", 1)
+        parts = line.split("----", 1)
 
         if len(parts) != 2:
             errors.append(
-                f"Line {line_number}: must use email---password"
+                f"Line {line_number}: must use email----password"
             )
             continue
 
