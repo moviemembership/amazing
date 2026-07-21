@@ -936,6 +936,18 @@ def email_list():
             """)
             total_replacements = cur.fetchone()["count"]
 
+            cur.execute("""
+                SELECT DISTINCT DATE(created_at) AS account_date
+                FROM email_accounts
+                WHERE parent_id IS NULL
+                ORDER BY account_date DESC;
+            """)
+            
+            available_dates = [
+                row["account_date"]
+                for row in cur.fetchall()
+            ]
+
     for parent in parents:
         parent["replacements"] = replacements_by_parent.get(
             parent["id"],
@@ -957,8 +969,8 @@ def email_list():
         parents_by_date=parents_by_date,
         total_parents=total_parents,
         total_replacements=total_replacements,
+        available_dates=available_dates,
         search=search,
-        selected_date=selected_date,
         sort=sort,
         notice=notice
     )
