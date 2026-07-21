@@ -375,9 +375,11 @@ pre {
     display: grid;
     grid-template-columns:
         minmax(230px, 1fr)
-        minmax(170px, 220px)
+        minmax(155px, 180px)
+        minmax(170px, 210px)
         auto
         auto;
+
     gap: 10px;
 
     padding: 14px;
