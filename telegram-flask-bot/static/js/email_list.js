@@ -295,3 +295,242 @@ if (
         dateObserver.observe(section);
     });
 }
+
+const pageFindBar =
+    document.getElementById("pageFindBar");
+
+const pageFindInput =
+    document.getElementById("pageFindInput");
+
+const pageFindCount =
+    document.getElementById("pageFindCount");
+
+const pageFindPrevious =
+    document.getElementById("pageFindPrevious");
+
+const pageFindNext =
+    document.getElementById("pageFindNext");
+
+const pageFindClose =
+    document.getElementById("pageFindClose");
+
+const openPageFind =
+    document.getElementById("openPageFind");
+
+let pageFindMatches = [];
+let pageFindCurrentIndex = -1;
+
+function getEmailRows() {
+    return Array.from(
+        document.querySelectorAll(".email-row")
+    );
+}
+
+function openFindBar() {
+    if (!pageFindBar || !pageFindInput) {
+        return;
+    }
+
+    pageFindBar.hidden = false;
+
+    requestAnimationFrame(function () {
+        pageFindInput.focus();
+        pageFindInput.select();
+    });
+}
+
+function clearFindState() {
+    getEmailRows().forEach(function (row) {
+        row.classList.remove(
+            "find-hidden",
+            "find-match",
+            "find-current"
+        );
+    });
+
+    pageFindMatches = [];
+    pageFindCurrentIndex = -1;
+
+    if (pageFindCount) {
+        pageFindCount.textContent = "0 results";
+    }
+}
+
+function closeFindBar() {
+    if (!pageFindBar || !pageFindInput) {
+        return;
+    }
+
+    pageFindBar.hidden = true;
+    pageFindInput.value = "";
+    clearFindState();
+}
+
+function updateCurrentMatch() {
+    pageFindMatches.forEach(function (row, index) {
+        row.classList.toggle(
+            "find-current",
+            index === pageFindCurrentIndex
+        );
+    });
+
+    if (
+        pageFindCurrentIndex >= 0 &&
+        pageFindMatches[pageFindCurrentIndex]
+    ) {
+        pageFindMatches[
+            pageFindCurrentIndex
+        ].scrollIntoView({
+            behavior: "smooth",
+            block: "center"
+        });
+    }
+
+    if (pageFindCount) {
+        if (pageFindMatches.length === 0) {
+            pageFindCount.textContent = "0 results";
+        } else {
+            pageFindCount.textContent =
+                (pageFindCurrentIndex + 1) +
+                " / " +
+                pageFindMatches.length;
+        }
+    }
+}
+
+function runPageFind() {
+    const query = pageFindInput
+        ? pageFindInput.value.trim().toLowerCase()
+        : "";
+
+    const rows = getEmailRows();
+
+    pageFindMatches = [];
+    pageFindCurrentIndex = -1;
+
+    rows.forEach(function (row) {
+        row.classList.remove(
+            "find-hidden",
+            "find-match",
+            "find-current"
+        );
+
+        if (!query) {
+            return;
+        }
+
+        const rowText =
+            row.textContent.toLowerCase();
+
+        if (rowText.includes(query)) {
+            row.classList.add("find-match");
+            pageFindMatches.push(row);
+        } else {
+            row.classList.add("find-hidden");
+        }
+    });
+
+    if (query && pageFindMatches.length > 0) {
+        pageFindCurrentIndex = 0;
+    }
+
+    updateCurrentMatch();
+}
+
+function goToNextMatch() {
+    if (pageFindMatches.length === 0) {
+        return;
+    }
+
+    pageFindCurrentIndex =
+        (pageFindCurrentIndex + 1) %
+        pageFindMatches.length;
+
+    updateCurrentMatch();
+}
+
+function goToPreviousMatch() {
+    if (pageFindMatches.length === 0) {
+        return;
+    }
+
+    pageFindCurrentIndex =
+        (
+            pageFindCurrentIndex -
+            1 +
+            pageFindMatches.length
+        ) %
+        pageFindMatches.length;
+
+    updateCurrentMatch();
+}
+
+if (openPageFind) {
+    openPageFind.addEventListener(
+        "click",
+        openFindBar
+    );
+}
+
+if (pageFindInput) {
+    pageFindInput.addEventListener(
+        "input",
+        runPageFind
+    );
+
+    pageFindInput.addEventListener(
+        "keydown",
+        function (event) {
+            if (event.key === "Enter") {
+                event.preventDefault();
+
+                if (event.shiftKey) {
+                    goToPreviousMatch();
+                } else {
+                    goToNextMatch();
+                }
+            }
+
+            if (event.key === "Escape") {
+                closeFindBar();
+            }
+        }
+    );
+}
+
+if (pageFindNext) {
+    pageFindNext.addEventListener(
+        "click",
+        goToNextMatch
+    );
+}
+
+if (pageFindPrevious) {
+    pageFindPrevious.addEventListener(
+        "click",
+        goToPreviousMatch
+    );
+}
+
+if (pageFindClose) {
+    pageFindClose.addEventListener(
+        "click",
+        closeFindBar
+    );
+}
+
+document.addEventListener(
+    "keydown",
+    function (event) {
+        const isFindShortcut =
+            (event.ctrlKey || event.metaKey) &&
+            event.key.toLowerCase() === "f";
+
+        if (!isFindShortcut) {
+            return;
+        }
+
+        event.preventDefault();
+        openFindBar();
+    }
+);
