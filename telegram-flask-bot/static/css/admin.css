@@ -1303,19 +1303,20 @@ body.delete-mode .email-row {
 ========================= */
 
 .date-jump-nav {
-    position: sticky;
-    top: 0;
-    z-index: 50;
+    display: grid;
+    grid-template-columns:
+        repeat(10, minmax(0, 1fr));
 
-    display: flex;
-    align-items: center;
     gap: 8px;
 
     width: 100%;
+    max-height: 152px;
+
     margin-bottom: 14px;
     padding: 10px;
 
-    overflow-x: auto;
+    overflow-x: hidden;
+    overflow-y: auto;
 
     border: 1px solid var(--line);
     border-radius: 14px;
@@ -1326,6 +1327,9 @@ body.delete-mode .email-row {
     box-shadow: var(--shadow);
 
     scrollbar-width: thin;
+    scrollbar-color: #cdbdca transparent;
+
+    overscroll-behavior: contain;
 }
 
 .date-jump-button {
@@ -1333,10 +1337,9 @@ body.delete-mode .email-row {
     align-items: center;
     justify-content: center;
 
-    flex: 0 0 auto;
-
-    min-height: 34px;
-    padding: 0 12px;
+    min-width: 0;
+    min-height: 35px;
+    padding: 0 10px;
 
     color: #746777;
     text-decoration: none;
@@ -1348,6 +1351,8 @@ body.delete-mode .email-row {
 
     font-size: 11px;
     font-weight: 800;
+
+    white-space: nowrap;
 
     transition:
         color 0.16s ease,
@@ -1368,15 +1373,47 @@ body.delete-mode .email-row {
 }
 
 .date-jump-nav::-webkit-scrollbar {
-    height: 5px;
+    width: 6px;
+}
+
+.date-jump-nav::-webkit-scrollbar-track {
+    background: transparent;
 }
 
 .date-jump-nav::-webkit-scrollbar-thumb {
     border-radius: 999px;
-    background: #d8cad5;
+    background: #cdbdca;
 }
 
+.email-date-group {
+    scroll-margin-top: 20px;
+}
 /* Prevent sticky navigation from covering date title */
 .email-date-group {
     scroll-margin-top: 70px;
+}
+
+@media (max-width: 700px) {
+    .date-jump-nav {
+        display: flex;
+        align-items: center;
+
+        max-height: none;
+
+        overflow-x: auto;
+        overflow-y: hidden;
+
+        padding: 9px;
+    }
+
+    .date-jump-button {
+        flex: 0 0 auto;
+        min-height: 34px;
+        padding: 0 11px;
+    }
+
+    .date-jump-nav::-webkit-scrollbar {
+        width: auto;
+        height: 5px;
+    }
 }
