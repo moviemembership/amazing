@@ -510,15 +510,24 @@ body.delete-mode #startDeleteButton {
     gap: 6px;
 }
 
+.email-date-heading {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding-left: 3px;
+}
+
 .email-date-title {
     margin: 0;
-    padding-left: 3px;
-
     color: #5b4e60;
-
     font-size: 14px;
     font-weight: 800;
 }
+
+.email-date-expiry {
+    color: #80654e;
+    font-size: 11px;
+    font
 
 /* Emails under the same date stay together */
 .email-row-group {
@@ -541,7 +550,7 @@ body.delete-mode #startDeleteButton {
     grid-template-columns:
         minmax(220px, 1.5fr)
         minmax(110px, 0.7fr)
-        minmax(125px, 0.65fr)
+        55px
         auto;
 
     gap: 10px;
@@ -555,6 +564,11 @@ body.delete-mode #startDeleteButton {
     transition: background 0.15s ease;
 }
 
+.row-edit {
+    display: flex;
+    align-items: center;
+}
+    
 .email-row:last-child {
     border-bottom: 0;
 }
@@ -887,9 +901,9 @@ body.delete-mode .replacement-email-row {
     body.delete-mode .email-row {
         grid-template-columns:
             auto
-            minmax(190px, 1.4fr)
-            minmax(100px, 0.7fr)
+            minmax(220px, 1.5fr)
             minmax(110px, 0.7fr)
+            55px
             auto;
     }
 
