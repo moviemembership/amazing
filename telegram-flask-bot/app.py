@@ -1684,3 +1684,104 @@ def handle_message_button(callback):
         f"To message this customer, type:\n\n"
         f"/msg {customer_id} your message here"
     )
+
+@app.route("/edit-email/<int:email_id>", methods=["GET", "POST"])
+def edit_email(email_id):
+    error_message = ""
+
+    with db() as conn:
+        with conn.cursor(cursor_factory=RealDictCursor) as cur:
+            cur.execute("""
+                SELECT
+                    id,
+                    email,
+                    password,
+                    parent_id,
+                    created_at,
+                    expiry_date
+                FROM email_accounts
+                WHERE id = %s;
+            """, (email_id,))
+
+            account = cur.fetchone()
+
+            if not account:
+                return "Email account not found", 404
+
+            if request.method == "POST":
+                email_value = request.form.get(
+                    "email",
+                    ""
+                ).strip()
+
+                password_value = request.form.get(
+                    "password",
+                    ""
+                ).strip()
+
+                expiry_date = request.form.get(
+                    "expiry_date",
+                    ""
+                ).strip()
+
+                if not email_value:
+                    error_message = "Email is required."
+
+                elif not password_value:
+                    error_message = "Password is required."
+
+                elif not expiry_date:
+                    error_message = "Expiry date is required."
+
+                else:
+                    try:
+                        parsed_expiry = datetime.strptime(
+                            expiry_date,
+                            "%Y-%m-%d"
+                        ).date()
+
+                    except ValueError:
+                        error_message = (
+                            "Please enter a valid expiry date."
+                        )
+
+                    else:
+                        cur.execute("""
+                            UPDATE email_accounts
+                            SET email = %s,
+                                password = %s,
+                                expiry_date = %s
+                            WHERE id = %s;
+                        """, (
+                            email_value,
+                            password_value,
+                            parsed_expiry,
+                            email_id
+                        ))
+
+                        # If parent expiry changes,
+                        # update all replacement expiry dates too.
+                        if account["parent_id"] is None:
+                            cur.execute("""
+                                UPDATE email_accounts
+                                SET expiry_date = %s
+                                WHERE parent_id = %s;
+                            """, (
+                                parsed_expiry,
+                                email_id
+                            ))
+
+                        conn.commit()
+
+                        return redirect(
+                            url_for(
+                                "email_list",
+                                notice="email_updated"
+                            )
+                        )
+
+    return render_template(
+        "edit_email.html",
+        account=account,
+        error_message=error_message
+    )
