@@ -1,0 +1,117 @@
+{% extends "base.html" %}
+
+{% block title %}Add Replacement{% endblock %}
+{% block body_class %}email-manager-page{% endblock %}
+
+{% block content %}
+<main class="narrow-shell">
+    <section class="panel soft-panel">
+        <span class="eyebrow">Account Library</span>
+        <h1>Add Replacement</h1>
+
+        <p class="muted">
+            Search for a parent account, select it, then attach
+            a replacement email. The replacement will inherit the
+            parent's expiry date.
+        </p>
+
+        {% if error_message %}
+            <div class="alert alert-error">
+                {{ error_message }}
+            </div>
+        {% endif %}
+
+        <form method="GET" class="search-row form-space">
+            <input
+                name="search"
+                type="text"
+                placeholder="Search parent email, password or ID"
+                value="{{ search }}"
+                required
+            >
+
+            <button class="button" type="submit">
+                Search
+            </button>
+        </form>
+
+        {% if search %}
+            <div class="search-results">
+                {% for result in search_results %}
+                    <a
+                        class="search-result"
+                        href="{{ url_for('add_replacement', parent_id=result.id, search=search) }}"
+                    >
+                        <div>
+                            <strong>{{ result.email }}</strong>
+                            <small>ID #{{ result.id }}</small>
+                        </div>
+
+                        <span>
+                            Expires {{ result.expiry_date }}
+                        </span>
+                    </a>
+                {% else %}
+                    <div class="empty-inline">
+                        No matching parent emails found.
+                    </div>
+                {% endfor %}
+            </div>
+        {% endif %}
+
+        {% if selected_parent %}
+            <div class="selected-parent">
+                <span>Selected parent email</span>
+                <strong>{{ selected_parent.email }}</strong>
+                <small>
+                    ID #{{ selected_parent.id }}
+                    · Expiry {{ selected_parent.expiry_date }}
+                </small>
+            </div>
+        {% endif %}
+
+        <form method="POST" class="form-stack form-space">
+            <input
+                type="hidden"
+                name="parent_id"
+                value="{{ selected_parent_id }}"
+            >
+
+            <label>
+                Replacement email
+                <input
+                    type="email"
+                    name="replacement_email"
+                    value="{{ replacement_email }}"
+                    placeholder="abc@gmail.com"
+                    required
+                >
+            </label>
+
+            <label>
+                Replacement password
+                <input
+                    type="text"
+                    name="replacement_password"
+                    value="{{ replacement_password }}"
+                    placeholder="Password"
+                    required
+                >
+            </label>
+
+            <div class="form-actions">
+                <a
+                    class="button button-secondary"
+                    href="{{ url_for('email_list') }}"
+                >
+                    Back
+                </a>
+
+                <button class="button" type="submit">
+                    Add Replacement
+                </button>
+            </div>
+        </form>
+    </section>
+</main>
+{% endblock %}
