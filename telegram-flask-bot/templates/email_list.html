@@ -94,7 +94,7 @@
                 class="date-jump-button"
                 href="#date-{{ account_date }}"
             >
-                {{ account_date }}
+                {{ account_date.strftime("%m-%d") }}
             </a>
         {% endfor %}
     </nav>
