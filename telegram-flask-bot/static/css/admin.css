@@ -835,7 +835,7 @@ body.delete-mode .email-row {
 /* Find bar */
 
 .page-find-bar {
-    position: sticky;
+    position: fixed;
     top: 10px;
     z-index: 200;
 
