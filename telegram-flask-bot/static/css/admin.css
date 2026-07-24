@@ -835,9 +835,12 @@ body.delete-mode .email-row {
 /* Find bar */
 
 .page-find-bar {
-    position: fixed;
-    top: 10px;
-    z-index: 200;
+    position: sticky;
+    top: 12px;
+    z-index: 150;
+
+    width: 100%;
+    margin: 16px 0 18px;
 
     display: grid;
     grid-template-columns:
@@ -848,17 +851,14 @@ body.delete-mode .email-row {
 
     gap: 8px;
 
-    width: min(560px, 100%);
-    margin: 0 0 18px auto;   /* align to the right */
-
     padding: 9px;
 
     border: 1px solid var(--line);
-    border-radius: 13px;
+    border-radius: 14px;
 
-    background: rgba(255,255,255,.98);
+    background: rgba(255,255,255,.97);
     backdrop-filter: blur(12px);
-    box-shadow: 0 14px 35px rgba(77,59,81,.14);
+    box-shadow: var(--shadow);
 }
 
 .page-find-bar[hidden] {
