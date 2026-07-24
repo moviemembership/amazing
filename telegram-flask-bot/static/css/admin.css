@@ -835,24 +835,34 @@ body.delete-mode .email-row {
 /* Find bar */
 
 .page-find-bar {
-    position: fixed;
+    position: sticky;
     top: 12px;
-    right: 12px;
-    z-index: 1200;
+    z-index: 150;
+
+    width: 100%;
+    margin: 16px 0 18px;
+
     display: grid;
     grid-template-columns:
         minmax(220px, 1fr)
-        38px
-        38px
-        38px;
-    gap: 7px;
-    width: min(560px, calc(100% - 24px));
+        42px
+        42px
+        42px;
+
+    gap: 8px;
+
     padding: 9px;
+
     border: 1px solid var(--line);
-    border-radius: 13px;
-    background: rgba(255, 255, 255, 0.98);
-    box-shadow: 0 14px 35px rgba(77, 59, 81, 0.14);
+    border-radius: 14px;
+
+    background: rgba(255,255,255,.97);
     backdrop-filter: blur(12px);
+    box-shadow: var(--shadow);
+}
+
+.page-find-bar[hidden] {
+    display: none;
 }
 
 .page-find-bar[hidden] {
