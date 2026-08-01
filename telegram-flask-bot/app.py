@@ -5,6 +5,7 @@ from psycopg2.extras import RealDictCursor
 from flask import Flask, request, redirect, render_template, url_for
 from datetime import datetime, timedelta
 from zoneinfo import ZoneInfo
+from urllib.parse import quote
 
 
 app = Flask(__name__)
@@ -948,11 +949,41 @@ def email_list():
                 for row in cur.fetchall()
             ]
 
+    reactivate_email_url = "https://wr.4knaifei.cn/#/login"
+    get_code_base_url = "https://yzmen.4knaifei.cn//#/login?cdk="
+
     for parent in parents:
         parent["replacements"] = replacements_by_parent.get(
             parent["id"],
             []
         )
+
+        # Hide the original account's Get Code button whenever
+        # at least one replacement account exists.
+        parent["show_get_code"] = not bool(
+            parent["replacements"]
+        )
+
+        parent_login = (
+            f"{parent['email']}----{parent['password']}"
+        )
+
+        parent["get_code_url"] = (
+            get_code_base_url
+            + quote(parent_login, safe="-")
+        )
+
+        # Replacement accounts always receive their own Get Code button.
+        for replacement in parent["replacements"]:
+            replacement_login = (
+                f"{replacement['email']}----"
+                f"{replacement['password']}"
+            )
+
+            replacement["get_code_url"] = (
+                get_code_base_url
+                + quote(replacement_login, safe="-")
+            )
 
     parents_by_date = {}
 
@@ -972,7 +1003,8 @@ def email_list():
         available_dates=available_dates,
         search=search,
         sort=sort,
-        notice=notice
+        notice=notice,
+        reactivate_email_url=reactivate_email_url
     )
 
 
