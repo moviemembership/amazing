@@ -952,6 +952,58 @@ body.delete-mode .email-row {
     margin-top: 20px;
 }
 
+.action-button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 30px;
+    padding: 6px 12px;
+    border-radius: 9px;
+    border: 1px solid transparent;
+    text-decoration: none;
+    font-size: 12px;
+    font-weight: 700;
+    line-height: 1;
+    white-space: nowrap;
+    cursor: pointer;
+    transition:
+        transform 0.15s ease,
+        box-shadow 0.15s ease,
+        opacity 0.15s ease;
+}
+
+.action-button:hover {
+    transform: translateY(-1px);
+    text-decoration: none;
+}
+
+.action-button:active {
+    transform: translateY(0);
+}
+
+.reactivate-button {
+    background: #9f78a3;
+    border-color: #9f78a3;
+    color: #ffffff;
+    box-shadow: 0 5px 14px rgba(159, 120, 163, 0.2);
+}
+
+.reactivate-button:hover {
+    color: #ffffff;
+    opacity: 0.9;
+}
+
+.get-code-button {
+    background: #fff3f7;
+    border-color: #e8bfd0;
+    color: #a35f7c;
+}
+
+.get-code-button:hover {
+    background: #f9e5ee;
+    color: #8d4d69;
+}
+
 /* Tablet */
 
 @media (max-width: 900px) {
