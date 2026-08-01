@@ -71,6 +71,15 @@
 
 
         <div class="header-actions">
+
+                <a
+                    href="{{ reactivate_email_url }}"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    class="btn btn-reactivate"
+                >
+                    Reactivate Email
+                </a>
             <a
                 class="button button-secondary"
                 href="{{ url_for('add_replacement') }}"
@@ -246,6 +255,17 @@
                                 </div>
 
                                 <div class="row-actions">
+
+                                        {% if parent.show_get_code %}
+                                        <a
+                                            href="{{ parent.get_code_url }}"
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            class="btn btn-get-code"
+                                        >
+                                            Get Code
+                                        </a>
+                
                                     <button
                                         class="button button-small button-soft copy-email-button"
                                         type="button"
@@ -265,6 +285,7 @@
                                     >
                                         ID Backup
                                     </button>
+                                        {% endif %}
                                 </div>
 
                             </div>
@@ -295,6 +316,15 @@
                                     </div>
 
                                     <div class="row-actions">
+
+                                        <a
+                                            href="{{ replacement.get_code_url }}"
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            class="btn btn-get-code"
+                                        >
+                                            Get Code
+                                        </a>
                                         <button
                                             class="button button-small button-soft copy-email-button"
                                             type="button"
