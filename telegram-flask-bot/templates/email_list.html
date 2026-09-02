@@ -456,10 +456,6 @@
     line-height: 1;
 }
 
-.date-delete-selector:not([hidden]) {
-    display: inline-flex;
-}
-
 .date-checkbox {
     width: 17px;
     height: 17px;
@@ -530,7 +526,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
     function showDateSelectors() {
         dateSelectors.forEach(function (selector) {
-            selector.hidden = false;
+            selector.classList.remove("is-hidden");
         });
 
         updateAllDateCheckboxes();
@@ -538,7 +534,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
     function hideDateSelectors() {
         dateSelectors.forEach(function (selector) {
-            selector.hidden = true;
+            selector.classList.add("is-hidden");
         });
 
         dateCheckboxes.forEach(function (checkbox) {
