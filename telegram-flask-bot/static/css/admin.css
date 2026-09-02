@@ -479,6 +479,25 @@ th {
     touch-action: pan-y;
 }
 
+.date-select-wrap {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+}
+
+.date-select-checkbox {
+    width: 17px;
+    height: 17px;
+    cursor: pointer;
+    accent-color: #9f78a3;
+}
+
+.email-select-checkbox {
+    cursor: pointer;
+    accent-color: #9f78a3;
+}
+
 .date-jump-button {
     display: inline-flex;
     align-items: center;
