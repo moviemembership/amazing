@@ -210,9 +210,24 @@
                 >
 
                     <div class="email-date-heading">
-                        <h3 class="email-date-title">
-                            {{ created_date }}
-                        </h3>
+                        <div class="email-date-title-wrap">
+                            <label
+                                class="date-delete-selector"
+                                data-date="{{ created_date }}"
+                                hidden
+                            >
+                                <input
+                                    class="date-checkbox"
+                                    type="checkbox"
+                                    data-date="{{ created_date }}"
+                                    aria-label="Select all emails from {{ created_date }}"
+                                >
+                            </label>
+
+                            <h3 class="email-date-title">
+                                {{ created_date }}
+                            </h3>
+                        </div>
 
                         {% if date_parents %}
                             <span class="email-date-expiry">
@@ -234,6 +249,7 @@
                                         type="checkbox"
                                         name="selected_ids"
                                         value="{{ parent.id }}"
+                                        data-date="{{ created_date }}"
                                     >
                                 </div>
 
@@ -428,6 +444,32 @@
         </div>
     </div>
 </div>
+<style>
+.email-date-title-wrap {
+    display: inline-flex;
+    align-items: center;
+    gap: 9px;
+}
+
+.date-delete-selector {
+    align-items: center;
+    justify-content: center;
+    line-height: 1;
+}
+
+.date-delete-selector:not([hidden]) {
+    display: inline-flex;
+}
+
+.date-checkbox {
+    width: 17px;
+    height: 17px;
+    margin: 0;
+    cursor: pointer;
+    accent-color: #9f78a3;
+}
+</style>
+
 {% endblock %}
 
 {% block scripts %}
@@ -438,4 +480,126 @@ window.EMAIL_NOTICE = {{ notice|tojson }};
 <script
     src="{{ url_for('static', filename='js/email_list.js') }}"
 ></script>
+
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+    const startDeleteButton = document.getElementById("startDeleteButton");
+    const cancelDeleteButton = document.getElementById("cancelDeleteButton");
+    const confirmDeleteButton = document.getElementById("confirmDeleteButton");
+
+    const dateSelectors = Array.from(
+        document.querySelectorAll(".date-delete-selector")
+    );
+
+    const dateCheckboxes = Array.from(
+        document.querySelectorAll(".date-checkbox")
+    );
+
+    const parentCheckboxes = Array.from(
+        document.querySelectorAll(".parent-checkbox")
+    );
+
+    function getParentCheckboxesForDate(dateValue) {
+        return parentCheckboxes.filter(function (checkbox) {
+            return checkbox.dataset.date === dateValue;
+        });
+    }
+
+    function updateDateCheckbox(dateCheckbox) {
+        const children = getParentCheckboxesForDate(
+            dateCheckbox.dataset.date
+        );
+
+        if (!children.length) {
+            dateCheckbox.checked = false;
+            dateCheckbox.indeterminate = false;
+            return;
+        }
+
+        const checkedCount = children.filter(function (checkbox) {
+            return checkbox.checked;
+        }).length;
+
+        dateCheckbox.checked = checkedCount === children.length;
+        dateCheckbox.indeterminate =
+            checkedCount > 0 && checkedCount < children.length;
+    }
+
+    function updateAllDateCheckboxes() {
+        dateCheckboxes.forEach(updateDateCheckbox);
+    }
+
+    function showDateSelectors() {
+        dateSelectors.forEach(function (selector) {
+            selector.hidden = false;
+        });
+
+        updateAllDateCheckboxes();
+    }
+
+    function hideDateSelectors() {
+        dateSelectors.forEach(function (selector) {
+            selector.hidden = true;
+        });
+
+        dateCheckboxes.forEach(function (checkbox) {
+            checkbox.checked = false;
+            checkbox.indeterminate = false;
+        });
+    }
+
+    dateCheckboxes.forEach(function (dateCheckbox) {
+        dateCheckbox.addEventListener("change", function () {
+            const children = getParentCheckboxesForDate(
+                dateCheckbox.dataset.date
+            );
+
+            children.forEach(function (checkbox) {
+                checkbox.checked = dateCheckbox.checked;
+                checkbox.dispatchEvent(
+                    new Event("change", { bubbles: true })
+                );
+            });
+
+            dateCheckbox.indeterminate = false;
+        });
+    });
+
+    parentCheckboxes.forEach(function (checkbox) {
+        checkbox.addEventListener("change", function () {
+            const dateCheckbox = document.querySelector(
+                '.date-checkbox[data-date="' +
+                CSS.escape(checkbox.dataset.date) +
+                '"]'
+            );
+
+            if (dateCheckbox) {
+                updateDateCheckbox(dateCheckbox);
+            }
+        });
+    });
+
+    if (startDeleteButton) {
+        startDeleteButton.addEventListener("click", function () {
+            showDateSelectors();
+        });
+    }
+
+    if (cancelDeleteButton) {
+        cancelDeleteButton.addEventListener("click", function () {
+            hideDateSelectors();
+        });
+    }
+
+    if (confirmDeleteButton) {
+        confirmDeleteButton.addEventListener("click", function () {
+            dateCheckboxes.forEach(function (checkbox) {
+                checkbox.disabled = true;
+            });
+        });
+    }
+
+    hideDateSelectors();
+});
+</script>
 {% endblock %}
