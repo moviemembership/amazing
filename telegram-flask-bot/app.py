@@ -1242,6 +1242,533 @@ def add_replacement():
     )
 
 
+
+# ===== MONEY MANAGER WEB APP =====
+
+import calendar
+import secrets
+from datetime import date
+from flask import abort
+
+
+def _money_user_by_key(db, access_key):
+    with db() as conn:
+        with conn.cursor(cursor_factory=RealDictCursor) as cur:
+            cur.execute("""
+                SELECT id, display_name, access_key
+                FROM finance_users
+                WHERE access_key = %s;
+            """, (access_key,))
+            return cur.fetchone()
+
+
+def _money_seed_user(db):
+    """Create the first personal Money Manager user once."""
+    with db() as conn:
+        with conn.cursor(cursor_factory=RealDictCursor) as cur:
+            cur.execute("SELECT id, access_key FROM finance_users ORDER BY id ASC LIMIT 1;")
+            existing = cur.fetchone()
+            if existing:
+                return existing
+
+            preferred_key = os.environ.get("MONEY_SELF_KEY", "").strip()
+            access_key = preferred_key or secrets.token_urlsafe(24)
+
+            cur.execute("""
+                INSERT INTO finance_users (display_name, access_key)
+                VALUES (%s, %s)
+                RETURNING id, access_key;
+            """, ("My Money", access_key))
+            user = cur.fetchone()
+
+            # Realbyte-style starter account/categories.
+            cur.execute("""
+                INSERT INTO finance_accounts (user_id, name, account_type, initial_balance, sort_order)
+                VALUES
+                    (%s, 'Cash', 'cash', 0, 1),
+                    (%s, 'Bank', 'bank', 0, 2),
+                    (%s, 'E-Wallet', 'ewallet', 0, 3);
+            """, (user["id"], user["id"], user["id"]))
+
+            expense_categories = [
+                ("Food", "🍜"), ("Transport", "🚗"), ("Shopping", "🛍️"),
+                ("Bills", "🧾"), ("Home", "🏠"), ("Health", "💊"),
+                ("Beauty", "✨"), ("Entertainment", "🎬"), ("Travel", "✈️"),
+                ("Education", "📚"), ("Other", "•••")
+            ]
+            income_categories = [
+                ("Salary", "💼"), ("Business", "🏪"), ("Bonus", "🎁"),
+                ("Investment", "📈"), ("Refund", "↩️"), ("Other Income", "＋")
+            ]
+            order_no = 1
+            for name, icon in expense_categories:
+                cur.execute("""
+                    INSERT INTO finance_categories (user_id, name, category_type, icon, sort_order)
+                    VALUES (%s, %s, 'expense', %s, %s);
+                """, (user["id"], name, icon, order_no))
+                order_no += 1
+
+            order_no = 1
+            for name, icon in income_categories:
+                cur.execute("""
+                    INSERT INTO finance_categories (user_id, name, category_type, icon, sort_order)
+                    VALUES (%s, %s, 'income', %s, %s);
+                """, (user["id"], name, icon, order_no))
+                order_no += 1
+
+            conn.commit()
+            return user
+
+
+def init_money_manager_db(db):
+    with db() as conn:
+        with conn.cursor() as cur:
+            cur.execute("""
+                CREATE TABLE IF NOT EXISTS finance_users (
+                    id SERIAL PRIMARY KEY,
+                    display_name TEXT NOT NULL DEFAULT 'My Money',
+                    access_key TEXT NOT NULL UNIQUE,
+                    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+                );
+            """)
+
+            cur.execute("""
+                CREATE TABLE IF NOT EXISTS finance_accounts (
+                    id SERIAL PRIMARY KEY,
+                    user_id INTEGER NOT NULL REFERENCES finance_users(id) ON DELETE CASCADE,
+                    name TEXT NOT NULL,
+                    account_type TEXT NOT NULL DEFAULT 'other',
+                    initial_balance NUMERIC(14,2) NOT NULL DEFAULT 0,
+                    sort_order INTEGER NOT NULL DEFAULT 0,
+                    is_archived BOOLEAN NOT NULL DEFAULT FALSE,
+                    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+                );
+            """)
+
+            cur.execute("""
+                CREATE TABLE IF NOT EXISTS finance_categories (
+                    id SERIAL PRIMARY KEY,
+                    user_id INTEGER NOT NULL REFERENCES finance_users(id) ON DELETE CASCADE,
+                    name TEXT NOT NULL,
+                    category_type TEXT NOT NULL CHECK (category_type IN ('income','expense')),
+                    icon TEXT NOT NULL DEFAULT '•',
+                    sort_order INTEGER NOT NULL DEFAULT 0,
+                    is_archived BOOLEAN NOT NULL DEFAULT FALSE,
+                    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+                );
+            """)
+
+            cur.execute("""
+                CREATE TABLE IF NOT EXISTS finance_transactions (
+                    id SERIAL PRIMARY KEY,
+                    user_id INTEGER NOT NULL REFERENCES finance_users(id) ON DELETE CASCADE,
+                    txn_type TEXT NOT NULL CHECK (txn_type IN ('income','expense','transfer')),
+                    amount NUMERIC(14,2) NOT NULL CHECK (amount >= 0),
+                    account_id INTEGER NOT NULL REFERENCES finance_accounts(id) ON DELETE RESTRICT,
+                    to_account_id INTEGER REFERENCES finance_accounts(id) ON DELETE RESTRICT,
+                    category_id INTEGER REFERENCES finance_categories(id) ON DELETE SET NULL,
+                    note TEXT NOT NULL DEFAULT '',
+                    transaction_date DATE NOT NULL,
+                    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+                );
+            """)
+
+            cur.execute("""
+                CREATE INDEX IF NOT EXISTS idx_finance_txn_user_date
+                ON finance_transactions(user_id, transaction_date DESC);
+            """)
+            cur.execute("""
+                CREATE INDEX IF NOT EXISTS idx_finance_accounts_user
+                ON finance_accounts(user_id);
+            """)
+            cur.execute("""
+                CREATE INDEX IF NOT EXISTS idx_finance_categories_user
+                ON finance_categories(user_id);
+            """)
+            conn.commit()
+
+    _money_seed_user(db)
+
+
+def _money_month_bounds(year, month):
+    first = date(year, month, 1)
+    if month == 12:
+        nxt = date(year + 1, 1, 1)
+    else:
+        nxt = date(year, month + 1, 1)
+    return first, nxt
+
+
+def _money_parse_month(value):
+    today = malaysia_now().date()
+    if not value:
+        return today.year, today.month
+    try:
+        year_s, month_s = value.split("-", 1)
+        year = int(year_s)
+        month = int(month_s)
+        if month < 1 or month > 12:
+            raise ValueError
+        return year, month
+    except Exception:
+        return today.year, today.month
+
+
+def _money_get_accounts(user_id):
+    with db() as conn:
+        with conn.cursor(cursor_factory=RealDictCursor) as cur:
+            cur.execute("""
+                SELECT
+                    a.id, a.name, a.account_type, a.initial_balance,
+                    COALESCE(SUM(
+                        CASE
+                            WHEN t.txn_type = 'income' AND t.account_id = a.id THEN t.amount
+                            WHEN t.txn_type = 'expense' AND t.account_id = a.id THEN -t.amount
+                            WHEN t.txn_type = 'transfer' AND t.account_id = a.id THEN -t.amount
+                            WHEN t.txn_type = 'transfer' AND t.to_account_id = a.id THEN t.amount
+                            ELSE 0
+                        END
+                    ), 0) + a.initial_balance AS balance
+                FROM finance_accounts a
+                LEFT JOIN finance_transactions t
+                    ON t.user_id = a.user_id
+                    AND (t.account_id = a.id OR t.to_account_id = a.id)
+                WHERE a.user_id = %s
+                  AND a.is_archived = FALSE
+                GROUP BY a.id
+                ORDER BY a.sort_order ASC, a.id ASC;
+            """, (user_id,))
+            return cur.fetchall()
+
+
+def _money_get_categories(user_id):
+    with db() as conn:
+        with conn.cursor(cursor_factory=RealDictCursor) as cur:
+            cur.execute("""
+                SELECT id, name, category_type, icon
+                FROM finance_categories
+                WHERE user_id = %s AND is_archived = FALSE
+                ORDER BY category_type, sort_order, id;
+            """, (user_id,))
+            rows = cur.fetchall()
+    return {
+        "expense": [r for r in rows if r["category_type"] == "expense"],
+        "income": [r for r in rows if r["category_type"] == "income"],
+    }
+
+
+@app.route("/money-link")
+def money_link():
+    if request.args.get("key") != ADMIN_KEY:
+        return "Unauthorized", 403
+
+    user = _money_seed_user(db)
+    return {
+        "ok": True,
+        "money_manager_url": url_for(
+            "money_manager",
+            access_key=user["access_key"],
+            _external=True
+        )
+    }
+
+
+@app.route("/money/<access_key>")
+def money_manager(access_key):
+    user = _money_user_by_key(db, access_key)
+    if not user:
+        abort(404)
+
+    tab = request.args.get("tab", "daily")
+    allowed_tabs = {"daily", "calendar", "monthly", "accounts", "stats"}
+    if tab not in allowed_tabs:
+        tab = "daily"
+
+    year, month = _money_parse_month(request.args.get("month"))
+    first_day, next_month = _money_month_bounds(year, month)
+    today = malaysia_now().date()
+
+    selected_date_text = request.args.get("date", "")
+    try:
+        selected_date = datetime.strptime(selected_date_text, "%Y-%m-%d").date()
+    except Exception:
+        selected_date = today if (today.year == year and today.month == month) else first_day
+
+    accounts = _money_get_accounts(user["id"])
+    categories = _money_get_categories(user["id"])
+
+    with db() as conn:
+        with conn.cursor(cursor_factory=RealDictCursor) as cur:
+            cur.execute("""
+                SELECT
+                    t.id, t.txn_type, t.amount, t.note, t.transaction_date,
+                    t.account_id, t.to_account_id, t.category_id,
+                    a.name AS account_name,
+                    ta.name AS to_account_name,
+                    c.name AS category_name,
+                    c.icon AS category_icon
+                FROM finance_transactions t
+                JOIN finance_accounts a ON a.id = t.account_id
+                LEFT JOIN finance_accounts ta ON ta.id = t.to_account_id
+                LEFT JOIN finance_categories c ON c.id = t.category_id
+                WHERE t.user_id = %s
+                  AND t.transaction_date >= %s
+                  AND t.transaction_date < %s
+                ORDER BY t.transaction_date DESC, t.id DESC;
+            """, (user["id"], first_day, next_month))
+            month_transactions = cur.fetchall()
+
+    income_total = sum(float(x["amount"]) for x in month_transactions if x["txn_type"] == "income")
+    expense_total = sum(float(x["amount"]) for x in month_transactions if x["txn_type"] == "expense")
+    month_balance = income_total - expense_total
+
+    day_map = {}
+    for tx in month_transactions:
+        d = tx["transaction_date"]
+        bucket = day_map.setdefault(d, {"income": 0.0, "expense": 0.0, "items": []})
+        bucket["items"].append(tx)
+        if tx["txn_type"] == "income":
+            bucket["income"] += float(tx["amount"])
+        elif tx["txn_type"] == "expense":
+            bucket["expense"] += float(tx["amount"])
+
+    selected_transactions = day_map.get(selected_date, {}).get("items", [])
+
+    # Monthly category statistics.
+    category_stats = {}
+    for tx in month_transactions:
+        if tx["txn_type"] != "expense":
+            continue
+        label = tx["category_name"] or "Uncategorized"
+        icon = tx["category_icon"] or "•"
+        key = (label, icon)
+        category_stats[key] = category_stats.get(key, 0.0) + float(tx["amount"])
+    stats = [
+        {"name": name, "icon": icon, "amount": amount,
+         "percent": (amount / expense_total * 100.0) if expense_total else 0.0}
+        for (name, icon), amount in sorted(category_stats.items(), key=lambda x: x[1], reverse=True)
+    ]
+
+    cal = calendar.Calendar(firstweekday=0)
+    weeks = cal.monthdatescalendar(year, month)
+
+    # Previous / next month links.
+    if month == 1:
+        prev_month = f"{year-1}-12"
+    else:
+        prev_month = f"{year}-{month-1:02d}"
+    if month == 12:
+        next_month_text = f"{year+1}-01"
+    else:
+        next_month_text = f"{year}-{month+1:02d}"
+
+    return render_template(
+        "money_manager.html",
+        user=user,
+        access_key=access_key,
+        tab=tab,
+        year=year,
+        month=month,
+        month_value=f"{year}-{month:02d}",
+        month_label=date(year, month, 1).strftime("%B %Y"),
+        prev_month=prev_month,
+        next_month=next_month_text,
+        today=today,
+        selected_date=selected_date,
+        accounts=accounts,
+        categories=categories,
+        transactions=month_transactions,
+        selected_transactions=selected_transactions,
+        day_map=day_map,
+        weeks=weeks,
+        income_total=income_total,
+        expense_total=expense_total,
+        month_balance=month_balance,
+        total_assets=sum(float(a["balance"]) for a in accounts),
+        stats=stats
+    )
+
+
+@app.route("/money/<access_key>/transaction", methods=["POST"])
+def money_add_transaction(access_key):
+    user = _money_user_by_key(db, access_key)
+    if not user:
+        abort(404)
+
+    txn_type = request.form.get("txn_type", "expense").strip()
+    if txn_type not in {"income", "expense", "transfer"}:
+        return "Invalid transaction type", 400
+
+    try:
+        amount = round(float(request.form.get("amount", "0")), 2)
+        account_id = int(request.form.get("account_id", "0"))
+        transaction_date = datetime.strptime(
+            request.form.get("transaction_date", ""),
+            "%Y-%m-%d"
+        ).date()
+    except (TypeError, ValueError):
+        return "Invalid transaction data", 400
+
+    if amount <= 0:
+        return "Amount must be greater than 0", 400
+
+    note = request.form.get("note", "").strip()[:500]
+    category_id = None
+    to_account_id = None
+
+    if txn_type in {"income", "expense"}:
+        raw_category = request.form.get("category_id", "").strip()
+        if raw_category:
+            try:
+                category_id = int(raw_category)
+            except ValueError:
+                return "Invalid category", 400
+    else:
+        try:
+            to_account_id = int(request.form.get("to_account_id", "0"))
+        except ValueError:
+            return "Invalid destination account", 400
+        if to_account_id == account_id:
+            return "Transfer accounts must be different", 400
+
+    with db() as conn:
+        with conn.cursor(cursor_factory=RealDictCursor) as cur:
+            cur.execute("""
+                SELECT id FROM finance_accounts
+                WHERE id = %s AND user_id = %s AND is_archived = FALSE;
+            """, (account_id, user["id"]))
+            if not cur.fetchone():
+                return "Account not found", 404
+
+            if to_account_id is not None:
+                cur.execute("""
+                    SELECT id FROM finance_accounts
+                    WHERE id = %s AND user_id = %s AND is_archived = FALSE;
+                """, (to_account_id, user["id"]))
+                if not cur.fetchone():
+                    return "Destination account not found", 404
+
+            if category_id is not None:
+                cur.execute("""
+                    SELECT id FROM finance_categories
+                    WHERE id = %s AND user_id = %s
+                      AND category_type = %s
+                      AND is_archived = FALSE;
+                """, (category_id, user["id"], txn_type))
+                if not cur.fetchone():
+                    return "Category not found", 404
+
+            cur.execute("""
+                INSERT INTO finance_transactions
+                    (user_id, txn_type, amount, account_id, to_account_id,
+                     category_id, note, transaction_date)
+                VALUES (%s, %s, %s, %s, %s, %s, %s, %s);
+            """, (
+                user["id"], txn_type, amount, account_id, to_account_id,
+                category_id, note, transaction_date
+            ))
+            conn.commit()
+
+    return redirect(url_for(
+        "money_manager",
+        access_key=access_key,
+        tab="daily",
+        month=transaction_date.strftime("%Y-%m"),
+        date=transaction_date.isoformat()
+    ))
+
+
+@app.route("/money/<access_key>/transaction/<int:transaction_id>/delete", methods=["POST"])
+def money_delete_transaction(access_key, transaction_id):
+    user = _money_user_by_key(db, access_key)
+    if not user:
+        abort(404)
+
+    return_month = request.form.get("month", malaysia_now().strftime("%Y-%m"))
+    return_date = request.form.get("date", malaysia_now().date().isoformat())
+
+    with db() as conn:
+        with conn.cursor() as cur:
+            cur.execute("""
+                DELETE FROM finance_transactions
+                WHERE id = %s AND user_id = %s;
+            """, (transaction_id, user["id"]))
+            conn.commit()
+
+    return redirect(url_for(
+        "money_manager",
+        access_key=access_key,
+        tab=request.form.get("tab", "daily"),
+        month=return_month,
+        date=return_date
+    ))
+
+
+@app.route("/money/<access_key>/account", methods=["POST"])
+def money_add_account(access_key):
+    user = _money_user_by_key(db, access_key)
+    if not user:
+        abort(404)
+
+    name = request.form.get("name", "").strip()[:80]
+    account_type = request.form.get("account_type", "other").strip()[:30]
+    try:
+        initial_balance = round(float(request.form.get("initial_balance", "0")), 2)
+    except ValueError:
+        initial_balance = 0.0
+
+    if not name:
+        return "Account name is required", 400
+
+    with db() as conn:
+        with conn.cursor() as cur:
+            cur.execute("""
+                INSERT INTO finance_accounts
+                    (user_id, name, account_type, initial_balance, sort_order)
+                VALUES (
+                    %s, %s, %s, %s,
+                    COALESCE((SELECT MAX(sort_order) + 1 FROM finance_accounts WHERE user_id = %s), 1)
+                );
+            """, (user["id"], name, account_type, initial_balance, user["id"]))
+            conn.commit()
+
+    return redirect(url_for("money_manager", access_key=access_key, tab="accounts"))
+
+
+@app.route("/money/<access_key>/category", methods=["POST"])
+def money_add_category(access_key):
+    user = _money_user_by_key(db, access_key)
+    if not user:
+        abort(404)
+
+    name = request.form.get("name", "").strip()[:80]
+    category_type = request.form.get("category_type", "expense").strip()
+    icon = request.form.get("icon", "•").strip()[:8] or "•"
+
+    if not name or category_type not in {"income", "expense"}:
+        return "Invalid category", 400
+
+    with db() as conn:
+        with conn.cursor() as cur:
+            cur.execute("""
+                INSERT INTO finance_categories
+                    (user_id, name, category_type, icon, sort_order)
+                VALUES (
+                    %s, %s, %s, %s,
+                    COALESCE((SELECT MAX(sort_order) + 1
+                              FROM finance_categories
+                              WHERE user_id = %s AND category_type = %s), 1)
+                );
+            """, (user["id"], name, category_type, icon, user["id"], category_type))
+            conn.commit()
+
+    return redirect(url_for("money_manager", access_key=access_key, tab="accounts"))
+
+
+# Create Money Manager tables and the first personal user.
+init_money_manager_db(db)
+
 def main_menu(chat_id):
     stock_count = get_stock_count()
 
