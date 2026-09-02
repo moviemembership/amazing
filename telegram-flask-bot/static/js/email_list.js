@@ -524,3 +524,22 @@ document.addEventListener(
         openFindBar();
     }
 );
+
+function showDateSelectors() {
+    dateSelectors.forEach(function (selector) {
+        selector.classList.remove("is-hidden");
+    });
+
+    updateAllDateCheckboxes();
+}
+
+function hideDateSelectors() {
+    dateSelectors.forEach(function (selector) {
+        selector.classList.add("is-hidden");
+    });
+
+    dateCheckboxes.forEach(function (checkbox) {
+        checkbox.checked = false;
+        checkbox.indeterminate = false;
+    });
+}
