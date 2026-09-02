@@ -124,22 +124,91 @@ button,input,select,textarea{font:inherit}.shell{width:min(100%,1050px);margin:0
       </div>
 
     {% elif tab == 'monthly' %}
-      <div class="month-list">
-        {% for d, info in day_map|dictsort(reverse=true) %}
-        <div class="day-group">
-          <div class="group-head"><span>{{ d.strftime('%d %b, %A') }}</span><span><span class="income">+{{ "%.2f"|format(info.income) }}</span> &nbsp; <span class="expense">-{{ "%.2f"|format(info.expense) }}</span></span></div>
-          {% for tx in info.items %}
-          <div class="tx">
-            <div class="tx-icon">{{ tx.category_icon or ('↔' if tx.txn_type=='transfer' else '•') }}</div>
-            <div><div class="tx-name">{{ tx.category_name or ('Transfer' if tx.txn_type=='transfer' else 'Uncategorized') }}</div><div class="tx-note">{{ tx.account_name }}{% if tx.to_account_name %} → {{ tx.to_account_name }}{% endif %}{% if tx.note %} · {{ tx.note }}{% endif %}</div></div>
-            <div class="tx-amount {{ tx.txn_type }}">{% if tx.txn_type=='income' %}+{% elif tx.txn_type=='expense' %}-{% endif %}RM {{ "%.2f"|format(tx.amount) }}</div>
-          </div>
-          {% endfor %}
+
+<div class="month-list">
+
+    {% for d, info in day_map|dictsort(reverse=true) %}
+
+    <div class="day-group">
+
+        <div class="group-head">
+            <span>
+                {{ d.strftime('%d %b, %A') }}
+            </span>
+
+            <span>
+                <span class="income">
+                    +RM {{ "%.2f"|format(info.income) }}
+                </span>
+
+                &nbsp;
+
+                <span class="expense">
+                    -RM {{ "%.2f"|format(info.expense) }}
+                </span>
+            </span>
         </div>
-        {% else %}
-        <div class="empty"><div class="big">🗓️</div>No transactions this month.</div>
+
+        {% for tx in info["items"] %}
+
+        <div class="tx">
+
+            <div class="tx-icon">
+                {{ tx.category_icon or
+                   ('↔' if tx.txn_type == 'transfer' else '•') }}
+            </div>
+
+            <div>
+                <div class="tx-name">
+                    {{ tx.category_name or
+                       ('Transfer'
+                        if tx.txn_type == 'transfer'
+                        else 'Uncategorized') }}
+                </div>
+
+                <div class="tx-note">
+
+                    {{ tx.account_name }}
+
+                    {% if tx.to_account_name %}
+                        → {{ tx.to_account_name }}
+                    {% endif %}
+
+                    {% if tx.note %}
+                        · {{ tx.note }}
+                    {% endif %}
+
+                </div>
+            </div>
+
+            <div class="tx-amount {{ tx.txn_type }}">
+
+                {% if tx.txn_type == 'income' %}
+                    +
+                {% elif tx.txn_type == 'expense' %}
+                    -
+                {% endif %}
+
+                RM {{ "%.2f"|format(tx.amount) }}
+
+            </div>
+
+        </div>
+
         {% endfor %}
-      </div>
+
+    </div>
+
+    {% else %}
+
+    <div class="empty">
+        <div class="big">🗓️</div>
+        No transactions this month.
+    </div>
+
+    {% endfor %}
+
+</div>
 
     {% elif tab == 'accounts' %}
       <div class="date-head"><div><div class="date-title">Accounts</div><div class="date-sub">Total assets</div></div><div style="font-size:22px;font-weight:850">RM {{ "%.2f"|format(total_assets) }}</div></div>
