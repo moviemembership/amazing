@@ -1137,3 +1137,98 @@ document.addEventListener(
 // =========================================================
 
 hideDateSelectors();
+
+let amountDigits = "";
+
+const amountDisplay = document.getElementById("amountDisplay");
+const amountValue = document.getElementById("amountValue");
+
+function updateAmountField() {
+    let cents = parseInt(amountDigits || "0", 10);
+
+    let amount = cents / 100;
+
+    amountDisplay.value =
+        "RM " +
+        amount.toLocaleString("en-MY", {
+            minimumFractionDigits: 2,
+            maximumFractionDigits: 2
+        });
+
+    amountValue.value = amount.toFixed(2);
+}
+
+amountDisplay.addEventListener("keydown", function (event) {
+
+    // Allow navigation keys
+    if (
+        event.key === "Tab" ||
+        event.key === "ArrowLeft" ||
+        event.key === "ArrowRight" ||
+        event.key === "Home" ||
+        event.key === "End"
+    ) {
+        return;
+    }
+
+    event.preventDefault();
+
+    // Numbers
+    if (/^[0-9]$/.test(event.key)) {
+
+        // Prevent ridiculous amounts
+        if (amountDigits.length < 12) {
+            amountDigits += event.key;
+        }
+
+        updateAmountField();
+        return;
+    }
+
+    // Backspace removes the last digit
+    if (event.key === "Backspace") {
+
+        amountDigits = amountDigits.slice(0, -1);
+
+        updateAmountField();
+        return;
+    }
+
+    // Delete / Escape clears amount
+    if (
+        event.key === "Delete" ||
+        event.key === "Escape"
+    ) {
+
+        amountDigits = "";
+
+        updateAmountField();
+    }
+});
+
+amountDisplay.addEventListener("focus", function () {
+    this.select();
+});
+
+amountDisplay.addEventListener("paste", function (event) {
+
+    event.preventDefault();
+
+    let pasted = (
+        event.clipboardData ||
+        window.clipboardData
+    ).getData("text");
+
+    // Keep only numbers
+    pasted = pasted.replace(/\D/g, "");
+
+    if (!pasted) {
+        return;
+    }
+
+    amountDigits = pasted.slice(0, 12);
+
+    updateAmountField();
+});
+
+updateAmountField();
