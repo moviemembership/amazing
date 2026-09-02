@@ -1,0 +1,233 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Money Manager</title>
+<style>
+:root{--red:#ef3f35;--red2:#ff5b4f;--ink:#171717;--muted:#858585;--line:#ececec;--bg:#f5f5f7;--card:#fff;--green:#2f9d65;--blue:#3976d6}
+*{box-sizing:border-box} body{margin:0;background:var(--bg);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif;color:var(--ink)}
+button,input,select,textarea{font:inherit}.shell{width:min(100%,1050px);margin:0 auto;min-height:100vh;background:var(--card);box-shadow:0 0 35px rgba(0,0,0,.05)}
+.top{position:sticky;top:0;z-index:20;background:#fff;border-bottom:1px solid var(--line)}
+.titlebar{height:60px;display:grid;grid-template-columns:70px 1fr 70px;align-items:center;padding:0 8px}
+.brand{font-size:19px;font-weight:750;text-align:center}.month-nav{border:0;background:transparent;font-size:25px;padding:10px;color:#444;cursor:pointer}
+.summary{display:grid;grid-template-columns:repeat(3,1fr);border-top:1px solid var(--line)}
+.sum{padding:13px 10px;text-align:center;border-right:1px solid var(--line)}.sum:last-child{border-right:0}
+.sum .label{font-size:12px;color:var(--muted);margin-bottom:5px}.sum .value{font-size:16px;font-weight:700}.income{color:var(--blue)}.expense{color:var(--red)}.balance{color:var(--green)}
+.tabs{display:flex;overflow:auto;border-top:1px solid var(--line);scrollbar-width:none}.tabs::-webkit-scrollbar{display:none}
+.tabs a{flex:1;min-width:82px;text-decoration:none;text-align:center;color:#777;padding:12px 8px 10px;font-size:13px;border-bottom:3px solid transparent}
+.tabs a.active{color:var(--red);font-weight:700;border-bottom-color:var(--red)}
+.content{padding:14px 14px 92px}.date-head{display:flex;justify-content:space-between;align-items:end;padding:9px 2px 12px}
+.date-title{font-weight:750;font-size:18px}.date-sub{font-size:12px;color:var(--muted)}
+.empty{padding:60px 20px;text-align:center;color:#aaa}.empty .big{font-size:40px;margin-bottom:10px}
+.tx{display:grid;grid-template-columns:48px 1fr auto;gap:10px;align-items:center;padding:12px 4px;border-bottom:1px solid var(--line)}
+.tx-icon{height:42px;width:42px;border-radius:50%;display:grid;place-items:center;background:#f3f3f3;font-size:20px}
+.tx-name{font-weight:650;font-size:15px}.tx-note{font-size:12px;color:var(--muted);margin-top:3px}.tx-amount{text-align:right;font-weight:750}
+.tx form{margin-top:4px}.mini-delete{border:0;background:none;color:#bbb;font-size:11px;padding:0;cursor:pointer}
+.calendar{border:1px solid var(--line);border-radius:12px;overflow:hidden}.weeknames,.week{display:grid;grid-template-columns:repeat(7,1fr)}
+.weeknames div{text-align:center;padding:9px 1px;font-size:11px;color:#999;background:#fafafa}
+.day{min-height:84px;border-top:1px solid var(--line);border-right:1px solid var(--line);padding:6px 5px;position:relative;text-decoration:none;color:inherit}
+.day:nth-child(7n){border-right:0}.day.off{background:#fafafa;color:#c9c9c9}.day.today .n{background:var(--red);color:#fff}
+.n{display:inline-grid;place-items:center;width:24px;height:24px;border-radius:50%;font-size:12px}
+.daynums{margin-top:5px;font-size:10px;line-height:1.35}.day-inc{color:var(--blue)}.day-exp{color:var(--red)}
+.month-list .day-group{margin-bottom:18px}.group-head{background:#fafafa;border:1px solid var(--line);border-radius:10px 10px 0 0;padding:9px 12px;display:flex;justify-content:space-between;font-size:13px;font-weight:700}
+.account-card{padding:15px;border:1px solid var(--line);border-radius:13px;margin-bottom:10px;display:flex;justify-content:space-between;align-items:center}
+.account-name{font-weight:700}.account-type{font-size:12px;color:#999;margin-top:3px}.account-bal{font-size:17px;font-weight:800}
+.stats-total{padding:18px;border-radius:14px;background:#fafafa;margin-bottom:12px}.stats-total .big{font-size:25px;font-weight:800;margin-top:5px}
+.stat{margin:14px 0}.stat-row{display:flex;justify-content:space-between;font-size:13px;margin-bottom:7px}.bar{height:9px;background:#eee;border-radius:999px;overflow:hidden}.bar>div{height:100%;background:var(--red);border-radius:999px}
+.action-row{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:16px}.secondary{border:1px solid var(--line);background:#fff;border-radius:10px;padding:12px;font-weight:650;cursor:pointer}
+.fab{position:fixed;right:max(22px,calc((100vw - 1000px)/2));bottom:26px;width:58px;height:58px;border-radius:50%;border:0;background:var(--red);color:#fff;font-size:34px;line-height:1;box-shadow:0 8px 24px rgba(239,63,53,.35);cursor:pointer;z-index:30}
+.modal{position:fixed;inset:0;background:rgba(0,0,0,.42);z-index:60;display:none;align-items:flex-end;justify-content:center}.modal.show{display:flex}
+.sheet{width:min(100%,620px);max-height:92vh;overflow:auto;background:#fff;border-radius:20px 20px 0 0;padding:18px 18px calc(22px + env(safe-area-inset-bottom))}
+.sheet-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:15px}.sheet-title{font-size:18px;font-weight:800}.x{border:0;background:#f2f2f2;width:34px;height:34px;border-radius:50%;font-size:20px}
+.segment{display:grid;grid-template-columns:repeat(3,1fr);background:#f3f3f3;padding:3px;border-radius:10px;margin-bottom:14px}.segment button{border:0;background:transparent;padding:9px;border-radius:8px;color:#777;font-weight:650}.segment button.on{background:#fff;color:var(--red);box-shadow:0 1px 5px rgba(0,0,0,.08)}
+.amount-input{font-size:34px;font-weight:800;width:100%;border:0;border-bottom:1px solid var(--line);padding:12px 2px 14px;outline:none;margin-bottom:13px}
+.field{margin:11px 0}.field label{display:block;font-size:12px;color:#888;margin-bottom:6px}.field input,.field select,.field textarea{width:100%;border:1px solid #ddd;border-radius:10px;padding:11px;background:#fff}.field textarea{min-height:70px;resize:vertical}
+.save{width:100%;border:0;background:var(--red);color:#fff;border-radius:11px;padding:13px;font-weight:750;margin-top:8px}
+.manage-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}.manage-grid h3{font-size:14px;margin:4px 0 10px}
+.small-form{border:1px solid var(--line);border-radius:12px;padding:12px}.small-form input,.small-form select{width:100%;margin:5px 0;border:1px solid #ddd;border-radius:8px;padding:9px}.small-form button{width:100%;border:0;border-radius:8px;padding:9px;background:#222;color:#fff;margin-top:5px}
+@media(max-width:640px){.shell{box-shadow:none}.content{padding-left:10px;padding-right:10px}.calendar .day{min-height:68px;padding:4px 3px}.daynums{font-size:8px}.manage-grid{grid-template-columns:1fr}.fab{right:18px}.sum .value{font-size:14px}}
+</style>
+</head>
+<body>
+<div class="shell">
+  <div class="top">
+    <div class="titlebar">
+      <a class="month-nav" href="{{ url_for('money_manager', access_key=access_key, tab=tab, month=prev_month) }}">‹</a>
+      <div class="brand">{{ month_label }}</div>
+      <a class="month-nav" href="{{ url_for('money_manager', access_key=access_key, tab=tab, month=next_month) }}">›</a>
+    </div>
+    <div class="summary">
+      <div class="sum"><div class="label">Income</div><div class="value income">RM {{ "%.2f"|format(income_total) }}</div></div>
+      <div class="sum"><div class="label">Expenses</div><div class="value expense">RM {{ "%.2f"|format(expense_total) }}</div></div>
+      <div class="sum"><div class="label">Total</div><div class="value balance">RM {{ "%.2f"|format(month_balance) }}</div></div>
+    </div>
+    <div class="tabs">
+      {% for key,label in [('daily','Daily'),('calendar','Calendar'),('monthly','Monthly'),('accounts','Accounts'),('stats','Stats')] %}
+      <a class="{{ 'active' if tab==key else '' }}" href="{{ url_for('money_manager', access_key=access_key, tab=key, month=month_value, date=selected_date.isoformat()) }}">{{ label }}</a>
+      {% endfor %}
+    </div>
+  </div>
+
+  <main class="content">
+    {% if tab == 'daily' %}
+      <div class="date-head">
+        <div><div class="date-title">{{ selected_date.strftime('%d %b %Y') }}</div><div class="date-sub">{{ selected_date.strftime('%A') }}</div></div>
+        <form method="get">
+          <input type="hidden" name="tab" value="daily"><input type="hidden" name="month" value="{{ month_value }}">
+          <input type="date" name="date" value="{{ selected_date.isoformat() }}" onchange="this.form.submit()" style="border:1px solid #ddd;border-radius:8px;padding:7px">
+        </form>
+      </div>
+      {% if selected_transactions %}
+        {% for tx in selected_transactions %}
+        <div class="tx">
+          <div class="tx-icon">{{ tx.category_icon or ('↔' if tx.txn_type=='transfer' else '•') }}</div>
+          <div>
+            <div class="tx-name">{{ tx.category_name or ('Transfer' if tx.txn_type=='transfer' else 'Uncategorized') }}</div>
+            <div class="tx-note">
+              {{ tx.account_name }}{% if tx.to_account_name %} → {{ tx.to_account_name }}{% endif %}
+              {% if tx.note %} · {{ tx.note }}{% endif %}
+            </div>
+          </div>
+          <div class="tx-amount {{ tx.txn_type }}">
+            {% if tx.txn_type == 'income' %}+{% elif tx.txn_type == 'expense' %}-{% endif %}RM {{ "%.2f"|format(tx.amount) }}
+            <form method="post" action="{{ url_for('money_delete_transaction', access_key=access_key, transaction_id=tx.id) }}" onsubmit="return confirm('Delete this transaction?')">
+              <input type="hidden" name="month" value="{{ month_value }}"><input type="hidden" name="date" value="{{ selected_date.isoformat() }}"><input type="hidden" name="tab" value="daily">
+              <button class="mini-delete">Delete</button>
+            </form>
+          </div>
+        </div>
+        {% endfor %}
+      {% else %}
+        <div class="empty"><div class="big">₿</div>No transactions on this day.</div>
+      {% endif %}
+
+    {% elif tab == 'calendar' %}
+      <div class="calendar">
+        <div class="weeknames">{% for d in ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'] %}<div>{{ d }}</div>{% endfor %}</div>
+        {% for week in weeks %}
+        <div class="week">
+          {% for d in week %}
+            {% set info = day_map.get(d) %}
+            <a class="day {{ 'off' if d.month != month else '' }} {{ 'today' if d == today else '' }}" href="{{ url_for('money_manager', access_key=access_key, tab='daily', month=d.strftime('%Y-%m'), date=d.isoformat()) }}">
+              <span class="n">{{ d.day }}</span>
+              {% if info %}
+              <div class="daynums">
+                {% if info.income %}<div class="day-inc">+{{ "%.0f"|format(info.income) }}</div>{% endif %}
+                {% if info.expense %}<div class="day-exp">-{{ "%.0f"|format(info.expense) }}</div>{% endif %}
+              </div>
+              {% endif %}
+            </a>
+          {% endfor %}
+        </div>
+        {% endfor %}
+      </div>
+
+    {% elif tab == 'monthly' %}
+      <div class="month-list">
+        {% for d, info in day_map|dictsort(reverse=true) %}
+        <div class="day-group">
+          <div class="group-head"><span>{{ d.strftime('%d %b, %A') }}</span><span><span class="income">+{{ "%.2f"|format(info.income) }}</span> &nbsp; <span class="expense">-{{ "%.2f"|format(info.expense) }}</span></span></div>
+          {% for tx in info.items %}
+          <div class="tx">
+            <div class="tx-icon">{{ tx.category_icon or ('↔' if tx.txn_type=='transfer' else '•') }}</div>
+            <div><div class="tx-name">{{ tx.category_name or ('Transfer' if tx.txn_type=='transfer' else 'Uncategorized') }}</div><div class="tx-note">{{ tx.account_name }}{% if tx.to_account_name %} → {{ tx.to_account_name }}{% endif %}{% if tx.note %} · {{ tx.note }}{% endif %}</div></div>
+            <div class="tx-amount {{ tx.txn_type }}">{% if tx.txn_type=='income' %}+{% elif tx.txn_type=='expense' %}-{% endif %}RM {{ "%.2f"|format(tx.amount) }}</div>
+          </div>
+          {% endfor %}
+        </div>
+        {% else %}
+        <div class="empty"><div class="big">🗓️</div>No transactions this month.</div>
+        {% endfor %}
+      </div>
+
+    {% elif tab == 'accounts' %}
+      <div class="date-head"><div><div class="date-title">Accounts</div><div class="date-sub">Total assets</div></div><div style="font-size:22px;font-weight:850">RM {{ "%.2f"|format(total_assets) }}</div></div>
+      {% for a in accounts %}
+      <div class="account-card">
+        <div><div class="account-name">{{ a.name }}</div><div class="account-type">{{ a.account_type|replace('_',' ')|title }}</div></div>
+        <div class="account-bal">RM {{ "%.2f"|format(a.balance) }}</div>
+      </div>
+      {% endfor %}
+      <div class="action-row"><button class="secondary" onclick="openManage()">Manage accounts</button><button class="secondary" onclick="openManage()">Manage categories</button></div>
+
+    {% elif tab == 'stats' %}
+      <div class="stats-total"><div class="date-sub">Monthly expenses</div><div class="big expense">RM {{ "%.2f"|format(expense_total) }}</div></div>
+      {% for s in stats %}
+      <div class="stat">
+        <div class="stat-row"><span>{{ s.icon }} {{ s.name }}</span><strong>RM {{ "%.2f"|format(s.amount) }} · {{ "%.0f"|format(s.percent) }}%</strong></div>
+        <div class="bar"><div style="width:{{ [s.percent,100]|min }}%"></div></div>
+      </div>
+      {% else %}
+      <div class="empty"><div class="big">📊</div>Add some expenses to see statistics.</div>
+      {% endfor %}
+    {% endif %}
+  </main>
+</div>
+
+<button class="fab" onclick="openTxn()">+</button>
+
+<div class="modal" id="txnModal" onclick="backdropClose(event,'txnModal')">
+  <div class="sheet">
+    <div class="sheet-head"><div class="sheet-title">Add transaction</div><button class="x" type="button" onclick="closeModal('txnModal')">×</button></div>
+    <form method="post" action="{{ url_for('money_add_transaction', access_key=access_key) }}" id="txnForm">
+      <input type="hidden" name="txn_type" id="txnType" value="expense">
+      <div class="segment">
+        <button type="button" data-type="income" onclick="setType('income',this)">Income</button>
+        <button type="button" class="on" data-type="expense" onclick="setType('expense',this)">Expense</button>
+        <button type="button" data-type="transfer" onclick="setType('transfer',this)">Transfer</button>
+      </div>
+      <input class="amount-input" name="amount" type="number" step="0.01" min="0.01" placeholder="RM 0.00" required>
+      <div class="field"><label>Date</label><input type="date" name="transaction_date" value="{{ selected_date.isoformat() }}" required></div>
+      <div class="field"><label>Account</label><select name="account_id" required>{% for a in accounts %}<option value="{{ a.id }}">{{ a.name }}</option>{% endfor %}</select></div>
+      <div class="field" id="toAccountField" style="display:none"><label>To account</label><select name="to_account_id">{% for a in accounts %}<option value="{{ a.id }}">{{ a.name }}</option>{% endfor %}</select></div>
+      <div class="field" id="categoryField"><label>Category</label><select name="category_id" id="categorySelect"></select></div>
+      <div class="field"><label>Memo</label><textarea name="note" placeholder="Optional note"></textarea></div>
+      <button class="save">Save</button>
+    </form>
+  </div>
+</div>
+
+<div class="modal" id="manageModal" onclick="backdropClose(event,'manageModal')">
+  <div class="sheet">
+    <div class="sheet-head"><div class="sheet-title">Manage</div><button class="x" onclick="closeModal('manageModal')">×</button></div>
+    <div class="manage-grid">
+      <form class="small-form" method="post" action="{{ url_for('money_add_account', access_key=access_key) }}">
+        <h3>Add account</h3>
+        <input name="name" placeholder="Account name e.g. Maybank" required>
+        <select name="account_type"><option value="bank">Bank</option><option value="cash">Cash</option><option value="credit_card">Credit Card</option><option value="ewallet">E-Wallet</option><option value="other">Other</option></select>
+        <input name="initial_balance" type="number" step="0.01" placeholder="Initial balance">
+        <button>Add account</button>
+      </form>
+      <form class="small-form" method="post" action="{{ url_for('money_add_category', access_key=access_key) }}">
+        <h3>Add category</h3>
+        <input name="name" placeholder="Category name" required>
+        <select name="category_type"><option value="expense">Expense</option><option value="income">Income</option></select>
+        <input name="icon" placeholder="Icon / emoji e.g. 🍜">
+        <button>Add category</button>
+      </form>
+    </div>
+  </div>
+</div>
+
+<script>
+const categories = {{ categories|tojson }};
+function openTxn(){document.getElementById('txnModal').classList.add('show');renderCategories('expense')}
+function openManage(){document.getElementById('manageModal').classList.add('show')}
+function closeModal(id){document.getElementById(id).classList.remove('show')}
+function backdropClose(e,id){if(e.target.id===id)closeModal(id)}
+function renderCategories(type){
+  const s=document.getElementById('categorySelect'); s.innerHTML='';
+  (categories[type]||[]).forEach(c=>{const o=document.createElement('option');o.value=c.id;o.textContent=(c.icon||'•')+' '+c.name;s.appendChild(o)})
+}
+function setType(type,btn){
+  document.getElementById('txnType').value=type;
+  document.querySelectorAll('.segment button').forEach(b=>b.classList.remove('on'));btn.classList.add('on');
+  const transfer=type==='transfer';
+  document.getElementById('toAccountField').style.display=transfer?'block':'none';
+  document.getElementById('categoryField').style.display=transfer?'none':'block';
+  if(!transfer)renderCategories(type);
+}
+</script>
+</body>
+</html>
