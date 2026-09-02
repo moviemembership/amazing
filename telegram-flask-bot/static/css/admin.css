@@ -504,6 +504,10 @@ th {
     display: none !important;
 }
 
+body:not(.delete-mode) .date-delete-selector {
+    display: none !important;
+}
+
 .date-checkbox {
     width: 17px;
     height: 17px;
